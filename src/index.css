@@ -1,111 +1,2494 @@
+/* Arkaiv: "Creative Tactile Archival Documentary" (concept deck).
+   Greyscale paper base; studio accent colors carry identity; the interface stays quiet. */
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  --paper: #f5f4f0;
+  --paper-2: #ebe9e3;
+  --card: #fbfaf7;
+  --ground: #d9d7d1;
+  --ink: #141414;
+  --ink-2: #4a4a4a; /* 8.4:1 on --paper */
+  --line: #1f1f1f;
+  --line-soft: #c4c1b9;
+  --focus: #1d4ed8;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  --font-head: 'Mozilla Text', 'Helvetica Neue', Arial, sans-serif;
+  --font-accent: 'Doto', 'Geist Mono', ui-monospace, monospace;
+  --font-body: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  /* Figma library tokens (Surabaya Creative Directory) */
+  --canvas: #f3f0e8; /* Colors/White, background/canvas */
+  --btn-base: #252722; /* Colors/Button/Base, border/strong, text/dark */
+  --btn-hover: #353437; /* text/hover */
+  --btn-pressed: #666465; /* Colors/Button/Pressed */
+  --btn-disabled: #b4b1af; /* Colors/Button/Disabled */
+  --error-200: #f5b2aa;
+  --error-500: #fc3c2f;
+  --error-600: #df362b;
+  --error-800: #972722;
+  --neutral-50: #f2efea;
+  --neutral-100: #f5f5f5;
+  --neutral-200: #e5e5e5;
+  --neutral-300: #d4d4d4;
+  --text-secondary: #7f7d7d;
+  --text-border: #b4b1af; /* text/border: idle field borders, labels, placeholders */
+  --surface: #fbf9f3; /* surface/default */
+  /* Colors/Agency Categories Color: marker (solid) and information (50% tint) */
+  --cat-branding: #ef446b;
+  --cat-branding-info: rgb(239 68 107 / 0.5);
+  --cat-motion: #f1592a;
+  --cat-motion-info: rgb(241 89 42 / 0.5);
+  --cat-illustration: #ffcf38;
+  --cat-illustration-info: rgb(255 207 56 / 0.5);
+  --cat-editorial: #0e733b;
+  --cat-editorial-info: rgb(14 115 59 / 0.5);
+  --cat-advertising: #0489cc;
+  --cat-advertising-info: rgb(158 227 243 / 0.5);
+  --cat-uiux: #00aeea;
+  --cat-uiux-info: rgb(0 174 234 / 0.5);
+  /* Colors/Region Color */
+  --region-pusat: #0e733b;
+  --region-utara: #8d3795;
+  --region-timur: #bf1e2e;
+  --region-selatan: #0489cc;
+  --region-barat: #f1592a;
+
+  --radius-tab: 2px 8px 8px 8px;
+  --touch: 44px;
+
+  color-scheme: light;
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--paper);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-body {
-  margin: 0;
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
+html,
+body,
+#root {
+  height: 100%;
   margin: 0;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+body {
+  background: var(--paper);
+  overflow: hidden;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+h1,
+h2,
+h3 {
+  font-family: var(--font-head);
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 0.5em;
+}
+
+p {
+  margin: 0 0 1em;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+[tabindex='-1']:focus {
+  outline: none;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -60px;
+  z-index: 100;
+  padding: 10px 14px;
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 8px;
+}
+
+/* ---------- Shell ---------- */
+
+.app {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Figma "Organism/Global Header": lg bar 32/80 padding, 32/30 on tablet, sm-2 below 728px. */
+.global-header {
+  position: relative;
+  z-index: 20;
+  border-bottom: 1px solid var(--btn-base);
+  background: var(--canvas);
+}
+
+.global-header__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 32px 80px;
+}
+
+.global-header__brand {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.global-header__brand img {
+  display: block;
+  max-width: none;
+}
+
+.global-header__search {
+  flex: 0 1 361px;
+}
+
+.global-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 28px;
+}
+
+.global-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+/* Links to other pages are muted (Colors/Button/Disabled); the current page is ink. */
+.global-nav__link:not([aria-current='page']) {
+  --btn-base: var(--btn-disabled);
+  --btn-hover: var(--btn-pressed);
+}
+
+/* Tablet (Figma Screen=Tablet): same bar, 30px side padding, logo and nav flush. */
+@media (max-width: 1099px) {
+  .global-header__bar {
+    gap: 0;
+    padding: 32px 30px;
+  }
+
+  .global-header__bar .global-header__search {
+    display: none;
+  }
+}
+
+/* Figma Size=sm-2: centered logo; navigation moves to the floating menu. */
+.float-nav {
+  display: none;
+}
+
+@media (max-width: 727px) {
+  .global-header__bar {
+    justify-content: center;
+    padding: 32px;
+  }
+
+  .global-nav {
+    display: none;
+  }
+
+  .float-nav {
+    display: flex;
+    justify-content: center;
+    z-index: 30;
+  }
+
+  .float-nav--bottom {
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    pointer-events: none;
+  }
+
+  .float-nav--bottom > * {
+    pointer-events: auto;
+  }
+
+  /* On the map the bottom edge belongs to the list sheet, so the menu sits in the bar. */
+  .float-nav--bar {
+    position: absolute;
+    top: 28px;
+    right: 16px;
+  }
+
+  .float-nav--bar .float-nav__panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+}
+
+/* Closed: dark tile with a paper outline and the GridFour icon. */
+.float-nav__toggle {
+  display: inline-grid;
+  place-items: center;
+  padding: 10px;
+  border: 1px solid var(--canvas);
+  background: var(--btn-base);
+  color: var(--canvas);
+  cursor: pointer;
+}
+
+/* Open: dark panel of paper-outlined sm buttons and a paper close tile. */
+.float-nav__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 6px;
+  border: 1px solid var(--canvas);
+  background: var(--btn-base);
+}
+
+.float-nav__link {
+  align-self: stretch;
+  margin: 4px;
+  padding: 6px 16px;
+  border: 1px solid var(--canvas);
+  font: 500 12px/18px var(--font-body);
+  text-align: center;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  color: var(--canvas);
+}
+
+.float-nav__link[aria-current='page'] {
+  background: var(--canvas);
+  color: var(--btn-base);
+}
+
+.float-nav__close {
+  display: inline-grid;
+  place-items: center;
+  padding: 4px;
+  border: 1px solid var(--canvas);
+  background: var(--canvas);
+  color: var(--btn-base);
+  cursor: pointer;
+}
+
+/* Figma "Organism/Global Footer" */
+.global-footer {
+  display: flex;
+  justify-content: center;
+  padding: 40px 80px;
+}
+
+.global-footer p {
+  margin: 0;
+  font: 400 18px/28px var(--font-body);
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--btn-base);
+}
+
+@media (max-width: 600px) {
+  .global-footer {
+    padding: 80px 16px;
+  }
+
+  .global-footer p {
+    font-size: 12px;
+    line-height: 18px;
+  }
+}
+
+.sample-banner {
+  margin: 0;
+  padding: 6px 16px;
+  font-size: 12px;
+  border-bottom: 1px dashed var(--line);
+  background: repeating-linear-gradient(-45deg, var(--paper), var(--paper) 8px, var(--paper-2) 8px, var(--paper-2) 16px);
+}
+
+.main {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.main--page {
+  overflow-y: auto;
+}
+
+/* ---------- Buttons, chips, tags ---------- */
+
+/* Figma "Button/Buttons" (+ "destructive"). --btn-color is the state color: the
+   fill of a primary button, the border and text of outlined and link buttons. */
+.btn {
+  --btn-color: var(--btn-base);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: var(--btn-pt) var(--btn-px) var(--btn-pb);
+  border: 0;
+  border-radius: 0;
+  font: 500 var(--btn-fs) / var(--btn-lh) var(--font-body);
+  text-align: center;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn svg {
+  flex-shrink: 0;
+}
+
+.btn--sm {
+  --btn-pt: 6px;
+  --btn-pb: 6px;
+  --btn-px: 16px;
+  --btn-fs: 12px;
+  --btn-lh: 18px;
+}
+
+.btn--md,
+.btn--lg,
+.btn--xl {
+  --btn-pt: 11px;
+  --btn-pb: 9px;
+  --btn-px: 22px;
+  --btn-fs: 12px;
+  --btn-lh: 18px;
+}
+
+.btn--lg {
+  --btn-fs: 14px;
+  --btn-lh: 20px;
+}
+
+.btn--xl {
+  --btn-fs: 16px;
+  --btn-lh: 24px;
+}
+
+.btn--danger {
+  --btn-base: var(--error-500);
+  --btn-hover: var(--error-600);
+  --btn-pressed: var(--error-800);
+  --btn-disabled: var(--error-200);
+  --btn-px: 12px;
+}
+
+.btn--icon-only {
+  --btn-px: 10px;
+}
+
+.btn--sm.btn--icon-only {
+  --btn-px: 6px;
+}
+
+.btn:hover {
+  --btn-color: var(--btn-hover);
+}
+
+/* Figma "State=Focused" (token Colors/Button/Pressed). */
+.btn:active,
+.btn:focus-visible {
+  --btn-color: var(--btn-pressed);
+}
+
+.btn:disabled,
+.btn[aria-disabled='true'] {
+  --btn-color: var(--btn-disabled);
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--btn-color);
+  color: var(--canvas);
+}
+
+.btn--outlined {
+  border: 1.5px solid var(--btn-color);
+  background: transparent;
+  color: var(--btn-color);
+}
+
+.btn--link {
+  padding: 0;
+  background: none;
+  color: var(--btn-color);
+}
+
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: var(--touch);
+  height: var(--touch);
+  margin: -8px -8px 0 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: var(--paper-2);
+}
+
+.category-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  background-color: currentColor;
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+
+/* Figma "Checkbox": sm 16px box + 14/20 text, md 20px box + 16/24 text. */
+.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.checkbox--md {
+  gap: 12px;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.checkbox--hint {
+  align-items: flex-start;
+}
+
+.checkbox__control {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.checkbox--hint .checkbox__control {
+  padding-top: 2px;
+}
+
+.checkbox__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: inherit;
+}
+
+.checkbox__box {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--neutral-300);
+  background: #fff;
+}
+
+.checkbox--md .checkbox__box {
+  width: 20px;
+  height: 20px;
+}
+
+.checkbox__box img {
+  grid-area: 1 / 1;
+  display: none;
+  max-width: none;
+}
+
+.checkbox__input:checked + .checkbox__box .checkbox__check,
+.checkbox__input:indeterminate + .checkbox__box .checkbox__minus {
+  display: block;
+}
+
+.checkbox__input:indeterminate + .checkbox__box .checkbox__check {
+  display: none;
+}
+
+.checkbox:hover .checkbox__input:not(:disabled) + .checkbox__box,
+.checkbox__input:checked + .checkbox__box,
+.checkbox__input:indeterminate + .checkbox__box {
+  border-color: var(--btn-base);
+  background: var(--neutral-50);
+}
+
+.checkbox__input:disabled + .checkbox__box {
+  border-color: var(--neutral-200);
+  background: var(--neutral-100);
+}
+
+.checkbox__input:focus-visible + .checkbox__box {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.checkbox__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.checkbox--md .checkbox__text {
+  gap: 2px;
+}
+
+.checkbox__label {
+  font-weight: 500;
+  color: var(--btn-base);
+}
+
+.checkbox__hint {
+  color: var(--text-secondary);
+}
+
+.checkbox:has(.checkbox__input:disabled) {
+  cursor: not-allowed;
+}
+
+.checkbox:has(.checkbox__input:disabled) :is(.checkbox__label, .checkbox__hint) {
+  color: var(--neutral-300);
+}
+
+/* Figma "Section Heading" */
+.section-heading {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 16px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--btn-base);
+}
+
+.section-heading__eyebrow {
+  margin: 0;
+  font: 900 16px/24px var(--font-accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-border);
+}
+
+.section-heading__title {
+  margin: 0;
+  font: 700 48px/60px var(--font-head);
+  letter-spacing: -0.02em;
+  color: var(--btn-base);
+}
+
+.section-heading--sm .section-heading__eyebrow {
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 0;
+}
+
+.section-heading--sm .section-heading__title {
+  font-size: 36px;
+  line-height: 44px;
+}
+
+@media (max-width: 600px) {
+  .section-heading--lg .section-heading__eyebrow {
+    font-size: 12px;
+    line-height: 18px;
+    letter-spacing: 0;
+  }
+
+  .section-heading--lg .section-heading__title {
+    font-size: 36px;
+    line-height: 44px;
+  }
+}
+
+/* Figma "Input/Input Field", "Input/Text Area Field". --field-color is the state color:
+   border, value and icons (and, for the text area, the label and hint too). */
+.field {
+  --field-color: var(--text-border);
+  --field-value: var(--text-border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-body);
+}
+
+.field:has(.field__input:not(:placeholder-shown)) {
+  --field-color: var(--btn-hover);
+  --field-value: var(--btn-hover);
+}
+
+.field--area:hover {
+  --field-color: var(--btn-hover);
+  --field-value: var(--btn-hover);
+}
+
+.field:focus-within {
+  --field-color: var(--btn-pressed);
+  --field-value: var(--btn-pressed);
+}
+
+.field--disabled {
+  --field-color: var(--btn-disabled);
+  --field-value: var(--btn-disabled);
+}
+
+.field__label {
+  font: 500 14px/20px var(--font-body);
+  text-transform: uppercase;
+  color: var(--text-border);
+}
+
+.field__hint {
+  margin: 0;
+  font: 400 16px/24px var(--font-body);
+  color: var(--text-border);
+}
+
+.field--area .field__label,
+.field--area .field__hint {
+  color: var(--field-color);
+}
+
+.field__box {
+  --field-border: var(--field-color);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--field-border);
+  color: var(--field-color);
+}
+
+.field__box--addon {
+  padding: 0 14px 0 0;
+}
+
+.field--error .field__box {
+  --field-border: var(--error-500);
+}
+
+.field--error :is(.field__label, .field__hint) {
+  color: var(--error-500);
+}
+
+.field__box:has(:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.field__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 400 16px/24px var(--font-body);
+  color: var(--field-value);
+}
+
+.field__input:focus-visible {
+  outline: none;
+}
+
+.field__input::placeholder {
+  color: var(--text-border);
+  opacity: 1;
+}
+
+.field__box--addon .field__input {
+  padding: 14px 0;
+}
+
+.field__addon {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border: 0;
+  border-right: 1px solid var(--field-border);
+  background: none;
+  font: 500 16px/24px var(--font-body);
+  color: var(--btn-base);
+  white-space: nowrap;
+}
+
+.field__select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.field__icon {
+  flex-shrink: 0;
+}
+
+.field__icon--error {
+  color: var(--error-500);
+}
+
+.field__help {
+  display: inline-flex;
+  cursor: help;
+}
+
+.field--area {
+  min-height: 200px;
+}
+
+.field--area .field__box {
+  flex: 1;
+  align-items: stretch;
+}
+
+.field--area .field__input {
+  resize: vertical;
+}
+
+/* Figma "Search" */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--btn-base);
+  color: var(--btn-base);
+}
+
+.search:hover {
+  border-color: var(--btn-hover);
+}
+
+.search:has(.search__input:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.search--sm.search--action {
+  padding-block: 10px;
+}
+
+.search__icon {
+  flex-shrink: 0;
+}
+
+.search__input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 400 16px/24px var(--font-body);
+  color: var(--btn-base);
+}
+
+.search__input:focus-visible {
+  outline: none;
+}
+
+.search__input::placeholder {
+  font-weight: 500;
+  color: var(--text-secondary);
+  opacity: 1;
+}
+
+.search--sm .search__input {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.search--sm .search__input::placeholder {
+  font-weight: 400;
+}
+
+.search__action {
+  display: inline-flex;
+  padding: 10px;
+  border: 0;
+  border-left: 1px solid var(--btn-base);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.tag-cat:disabled {
+  --tag-fg: var(--btn-disabled);
+  border-color: var(--btn-disabled);
+  cursor: not-allowed;
+}
+
+/* Field with a selected value (RegionSelect), same as Input Field State=Filled. */
+.field--filled {
+  --field-color: var(--btn-hover);
+  --field-value: var(--btn-hover);
+}
+
+.field__optional {
+  color: var(--text-secondary);
+}
+
+/* Figma "Dropdown Input/Wilayah" */
+.field__anchor {
+  position: relative;
+}
+
+.field--select .field__box {
+  width: 100%;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.field__value {
+  flex: 1;
+  min-width: 0;
+  font: 400 16px/24px var(--font-body);
+  color: var(--field-value);
+}
+
+.field__value.is-placeholder {
+  color: var(--text-border);
+}
+
+.region-list {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--btn-base);
+  background: var(--canvas);
+}
+
+.region-list__option {
+  cursor: pointer;
+}
+
+.region-list__option .tag-region {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.region-list__option.is-active:not([aria-selected='true']) .tag-region {
+  outline: 2px solid var(--btn-base);
+  outline-offset: -2px;
+}
+
+/* Figma "Box with inner labels" */
+.labeled-box {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  padding-top: 60px;
+  border: 1px solid var(--btn-base);
+  background: var(--canvas);
+}
+
+.labeled-box__label {
+  position: absolute;
+  top: 9px;
+  left: -1px;
+  margin: 0;
+  padding: 6px 12px;
+  background: var(--btn-base);
+  font: 700 12px/18px var(--font-body);
+  text-transform: uppercase;
+  color: var(--text-border);
+}
+
+.labeled-box--step {
+  padding: 60px 20px 20px;
+  background: var(--surface);
+}
+
+.labeled-box__text {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  font: 500 16px/24px var(--font-body);
+  color: var(--btn-base);
+}
+
+.labeled-box__watermark {
+  position: absolute;
+  right: 60px;
+  bottom: 117px;
+  translate: 100% 100%;
+  font: 900 160px/normal var(--font-accent);
+  color: var(--btn-base);
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.labeled-box__list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--btn-base);
+}
+
+.labeled-box--cat-lg .labeled-box__list {
+  grid-template-columns: 1fr 1fr;
+}
+
+.labeled-box__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px 9px;
+  border-bottom: 1px solid var(--btn-base);
+  font: 400 12px/18px var(--font-body);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--btn-base);
+}
+
+.labeled-box--cat-lg .labeled-box__row:nth-child(even) {
+  border-left: 1px solid var(--btn-base);
+}
+
+.labeled-box--cat-lg .labeled-box__row:nth-last-child(-n + 2),
+.labeled-box--cat-sm .labeled-box__row:last-child {
+  border-bottom: 0;
+}
+
+.labeled-box__list--regions li + li {
+  border-top: 1px solid var(--btn-base);
+}
+
+.labeled-box__region {
+  display: flex;
+  justify-content: flex-start;
+}
+
+/* Figma "Tentang Direktori" screens: desktop >= 1100px (110px gutters),
+   tablet 728-1099px (62px), mobile < 728px (32px). Content is at most 1220px wide. */
+.about {
+  --about-x: 110px;
+  --about-y: 100px;
+  background: var(--canvas);
+}
+
+.about__inner {
+  width: 100%;
+  max-width: calc(1220px + 2 * var(--about-x));
+  margin: 0 auto;
+  padding: 0 var(--about-x);
+}
+
+.about__hero {
+  padding: var(--about-y) 0;
+}
+
+.about__hero .about__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.about__eyebrow {
+  margin: 0;
+  font: 900 16px/24px var(--font-accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--btn-base);
+}
+
+.about__title {
+  margin: 0;
+  font: 700 120px/110px var(--font-head);
+  letter-spacing: -0.06em;
+  color: var(--btn-base);
+}
+
+/* Desktop sets the city in Doto, like the cover. */
+.about__title-accent {
+  font-family: var(--font-accent);
+  font-weight: 900;
+}
+
+.about__lede {
+  max-width: 919px;
+  margin: -12px 0 0;
+  font: 400 20px/30px var(--font-body);
+  color: var(--text-secondary);
+}
+
+.about__book-inner {
+  display: flex;
+  gap: 24px;
+  height: 358px;
+}
+
+.about__book-media {
+  flex: 0 0 417px;
+  border-right: 1px solid var(--btn-base);
+}
+
+.about__book-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+}
+
+.about__book-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px 24px 24px 0;
+}
+
+.about__book-title {
+  margin: 0;
+  font: 700 48px/60px var(--font-head);
+  letter-spacing: -0.02em;
+  color: var(--btn-base);
+}
+
+.about__book-body {
+  margin: 0;
+  font: 400 18px/28px var(--font-body);
+  color: var(--text-secondary);
+}
+
+.about__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+  padding: var(--about-y) 0;
+}
+
+.about__section {
+  display: flex;
+  flex-direction: column;
+}
+
+.about__section .section-heading {
+  margin-bottom: 24px;
+}
+
+.about__criteria {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* On this page the step boxes sit on paper, not on the lighter surface. */
+.about .labeled-box--step {
+  background: var(--canvas);
+}
+
+.about__note {
+  display: flex;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 12px;
+  background: #eae7de;
+  font: 400 12px/18px var(--font-body);
+  color: var(--text-secondary);
+}
+
+.about__note::before {
+  content: '';
+  flex: 0 0 1px;
+  background: var(--btn-base);
+}
+
+.about__codes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.about__join-text {
+  margin: 0 0 20px;
+  font: 500 16px/24px var(--font-body);
+  color: var(--text-secondary);
+}
+
+.about__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* The pair shares one height: the filled button carries a matching 1.5px edge. */
+.about__actions .btn--primary {
+  border: 1.5px solid var(--btn-color);
+}
+
+@media (max-width: 1099px) {
+  .about {
+    --about-x: 62px;
+  }
+
+  .about__title {
+    font-size: 80px;
+    line-height: 70px;
+    letter-spacing: 0;
+  }
+
+  .about__title-accent {
+    font-family: inherit;
+    font-weight: inherit;
+  }
+
+  .about__lede {
+    font-size: 18px;
+    line-height: 28px;
+  }
+
+  .about__book-inner {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .about__book-media {
+    flex: none;
+    height: 287px;
+    border-right: 0;
+  }
+}
+
+@media (max-width: 727px) {
+  .about {
+    --about-x: 32px;
+    --about-y: 50px;
+  }
+
+  .about__eyebrow {
+    font-size: 12px;
+    line-height: 18px;
+    letter-spacing: 0;
+  }
+
+  .about__title {
+    font-size: 48px;
+    line-height: 60px;
+    letter-spacing: -0.02em;
+  }
+
+  .about__lede {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .about__cta {
+    --btn-fs: 12px;
+    --btn-lh: 18px;
+  }
+
+  .about__book-title {
+    font-size: 36px;
+    line-height: 44px;
+  }
+
+  .about__book-body {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .about__criteria,
+  .about__codes {
+    grid-template-columns: 1fr;
+  }
+
+  .about__actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .about__actions .btn {
+    --btn-fs: 12px;
+    --btn-lh: 18px;
+  }
+}
+
+/* "Box with inner labels" Category lg falls back to one column when the box is narrow. */
+.labeled-box--list {
+  container-type: inline-size;
+}
+
+@container (max-width: 420px) {
+  .labeled-box--cat-lg .labeled-box__list {
+    grid-template-columns: 1fr;
+  }
+
+  .labeled-box--cat-lg .labeled-box__row:nth-child(even) {
+    border-left: 0;
+  }
+
+  .labeled-box--cat-lg .labeled-box__row:nth-last-child(2) {
+    border-bottom: 1px solid var(--btn-base);
+  }
+}
+
+/* Figma "Progress Check": md checkbox, 14/20 text, ink rule under each row. */
+.progress-check {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progress-check__item {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--btn-base);
+}
+
+.progress-check .checkbox {
+  gap: 10px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.progress-check .checkbox__label {
+  font-weight: 400;
+}
+
+.progress-check .checkbox__box {
+  border-color: var(--btn-base);
+  background: var(--neutral-50);
+}
+
+.progress-check__note {
+  color: var(--text-secondary);
+}
+
+/* Figma "Form" page organism. Sizes follow the layout's width:
+   sm < 600px, md 600-999px, lg >= 1000px. */
+.submission {
+  container: submission / inline-size;
+  background: var(--canvas);
+}
+
+.submission__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 0;
+}
+
+.submission__side {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.choice {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice__legend {
+  padding: 0;
+  margin-bottom: 10px;
+  font: 400 16px/24px var(--font-body);
+  color: var(--btn-base);
+}
+
+.choice__options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.choice__option {
+  position: relative;
+  display: flex;
+}
+
+.choice__option input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Request type: sm buttons, outlined, filled when chosen (1px borders keep them level). */
+.choice__btn {
+  flex: 1;
+  border: 1px solid var(--btn-color);
+  background: transparent;
+  color: var(--btn-color);
+}
+
+.choice__option:hover .choice__btn {
+  --btn-color: var(--btn-hover);
+}
+
+.choice__option input:checked + .choice__btn {
+  background: var(--btn-color);
+  color: var(--canvas);
+}
+
+.choice__option input:focus-visible + .choice__btn {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.submission .submission__checklist-title {
+  margin: 0;
+  font: inherit;
+}
+
+.submission__checklist-static {
+  display: none;
+}
+
+.submission__checklist-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  background: var(--btn-base);
+  font: 500 16px/24px var(--font-body);
+  text-align: left;
+  color: var(--canvas);
+  cursor: pointer;
+}
+
+.submission__checklist-toggle svg {
+  flex-shrink: 0;
+  transition: rotate 0.15s ease-out;
+}
+
+.submission__checklist.is-collapsed .submission__checklist-toggle svg {
+  rotate: -90deg;
+}
+
+.submission__checklist.is-collapsed .submission__progress {
+  display: none;
+}
+
+.submission__progress {
+  padding: 24px 12px;
+  background: var(--canvas);
+}
+
+.submission__main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+.submission__main .submission__heading {
+  margin: 0;
+}
+
+.submission__main .page__lede {
+  margin: 0;
+}
+
+.submission__cta {
+  align-self: flex-start;
+}
+
+@container submission (min-width: 600px) {
+  .submission__inner {
+    padding: 24px;
+  }
+
+  .choice__options {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .choice__btn {
+    flex: none;
+  }
+
+  /* Size=md closes the form with an ink rule. */
+  .submission__main {
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--btn-base);
+  }
+}
+
+@container submission (min-width: 1000px) {
+  .submission__inner {
+    flex-direction: row;
+    gap: 50px;
+  }
+
+  .submission__side {
+    flex: 0 0 407px;
+  }
+
+  .submission__main {
+    flex: 1;
+    padding: 0 0 0 50px;
+    border-bottom: 0;
+    border-left: 1px solid var(--btn-base);
+  }
+
+  /* On lg the checklist title is plain text and the list always shows. */
+  .submission__checklist-static {
+    display: block;
+    margin-bottom: 0;
+    font: 400 16px/24px var(--font-body);
+    color: var(--btn-base);
+  }
+
+  .submission__checklist-toggle {
+    display: none;
+  }
+
+  .submission__checklist.is-collapsed .submission__progress {
+    display: flex;
+  }
+}
+
+/* Figma "Form": labels and outlines in ink, placeholders in text/secondary. */
+.register-form {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.register-form .field {
+  --field-color: var(--btn-base);
+}
+
+.register-form .field:focus-within {
+  --field-color: var(--btn-pressed);
+}
+
+.register-form .field__label,
+.register-form .field--area .field__label {
+  color: var(--btn-base);
+}
+
+.register-form .field--error .field__label {
+  color: var(--error-500);
+}
+
+.register-form :is(.field__input, .search__input)::placeholder,
+.register-form .field__value.is-placeholder {
+  color: var(--text-secondary);
+}
+
+.register-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 40px;
+  align-items: start;
+}
+
+.register-form__categories {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.register-form .register-form__categories legend {
+  padding: 0;
+  margin-bottom: 6px;
+  color: var(--text-border);
+}
+
+.register-form__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.register-form__error {
+  color: var(--error-500);
+}
+
+.register-form__submit {
+  align-self: flex-start;
+}
+
+/* Size=sm whenever the form itself is narrow, wherever it is placed
+   (two columns down to the ~700px Size=md layout). */
+@container (max-width: 560px) {
+  .register-form__row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Size=sm lists Instagram before Website. */
+  .register-form__instagram {
+    order: -1;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.chip__count {
+  font-family: var(--font-accent);
+  font-weight: 700;
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+/* Shared box of every Figma tag: 11/9/12 padding, 10px gap, 12/18 Geist Mono caps. */
+.tag,
+.tag-cat,
+.tag-region {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 11px 12px 9px;
+  border: 0;
+  border-radius: 0;
+  font: 500 12px/18px var(--font-body);
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+button.tag,
+button.tag-cat {
+  cursor: pointer;
+}
+
+/* "Tag/General" */
+.tag {
+  border: 1.5px solid var(--btn-base);
+  background: transparent;
+  color: var(--btn-base);
+}
+
+.tag--filled,
+.tag[aria-pressed='true'] {
+  background: var(--btn-base);
+  color: var(--canvas);
+}
+
+.tag--expands .tag__detail {
+  display: none;
+}
+
+.tag--expands:is(:hover, :focus-visible) .tag__detail {
+  display: inline;
+}
+
+/* "Tag/Category": --cat is the category marker color, --cat-info its 50% tint. */
+.tag-cat {
+  --tag-fg: var(--btn-base);
+  border: 1px solid var(--btn-base);
+  background: transparent;
+  color: var(--tag-fg);
+  font-weight: 400;
+}
+
+.tag-cat--outlined {
+  --tag-fg: var(--cat);
+  border-color: var(--cat);
+}
+
+.tag-cat--filled {
+  background: var(--cat-info);
+}
+
+:is(a, button).tag-cat--filled:hover {
+  background: var(--cat);
+}
+
+.tag-cat--netral,
+.tag-cat--outlined-netral[aria-pressed='true'] {
+  --tag-fg: var(--canvas);
+  background: var(--btn-base);
+}
+
+.tag-cat__initial {
+  min-width: 26px;
+  padding: 0 4px;
+  background: var(--cat);
+  color: var(--canvas);
+  font-weight: 600;
+  text-align: center;
+}
+
+.tag-cat--outlined-netral .tag-cat__initial {
+  border: 1px solid var(--btn-base);
+  color: var(--btn-base);
+}
+
+.tag-cat__remove {
+  flex-shrink: 0;
+}
+
+/* Region tag ("Tag/Category" Region=...) on "Tag/_Base Category". */
+.tag-region {
+  --tag-box: var(--canvas);
+  --tag-chip: var(--region);
+  --tag-chip-fg: var(--canvas);
+  --tag-fg: var(--btn-base);
+  background: var(--tag-box);
+  color: var(--tag-fg);
+}
+
+.tag-region--bordered {
+  border: 1px solid var(--btn-base);
+}
+
+.tag-region--initial-black,
+.tag-region--initial-white {
+  --tag-box: var(--region);
+  --tag-chip: var(--btn-base);
+  --tag-fg: var(--canvas);
+}
+
+.tag-region--initial-white {
+  --tag-chip: var(--canvas);
+  --tag-chip-fg: var(--btn-base);
+}
+
+.tag-region__code {
+  padding: 2px 10px;
+  background: var(--tag-chip);
+  color: var(--tag-chip-fg);
+}
+
+.code-tab {
+  display: inline-block;
+  padding: 3px 7px 2px;
+  border-radius: 3px;
+  font: 700 13px/1.2 var(--font-accent);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  border: 1px solid rgb(0 0 0 / 0.25);
+}
+
+.area-tag__code {
+  font-family: var(--font-accent);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.04em;
+}
+
+/* ---------- Explore layout ---------- */
+
+.explore {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-bottom: 1.5px solid var(--line);
+  background: var(--paper);
+}
+
+.filter-bar__scroll {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px;
+}
+
+.filter-bar__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-bar__clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  min-height: 40px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  font: 500 13px var(--font-body);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.explore__body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.panel {
+  flex: none;
+  width: 380px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-right: 1.5px solid var(--line);
+  background: var(--paper);
+}
+
+.panel[hidden] {
+  display: none;
+}
+
+.explore__map {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.panel-toggle {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  font: 500 13px var(--font-body);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+/* ---------- Map ---------- */
+
+.map-wrap {
+  position: absolute;
+  inset: 0;
+}
+
+/* maplibre-gl.css makes the container position: relative, so size it explicitly. */
+.map {
+  width: 100%;
+  height: 100%;
+  background: var(--ground);
+}
+
+.maplibregl-ctrl-group {
+  border: 1.5px solid var(--line);
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+
+.maplibregl-ctrl-group button {
+  width: 36px;
+  height: 36px;
+}
+
+.maplibregl-canvas:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+.wilayah-label {
+  font: 700 14px var(--font-accent);
+  letter-spacing: 0.12em;
+  color: rgb(20 20 20 / 0.42);
+  pointer-events: none;
+  user-select: none;
+}
+
+.pin {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  line-height: 0;
+}
+
+/* Figma "_Base Map Marker": 40x48 silhouette, 18px category icon at (11, 10). */
+.marker {
+  position: relative;
+  display: block;
+  width: 40px;
+  height: 48px;
+  transition: transform 0.15s ease-out;
+}
+
+.marker__shape {
+  position: absolute;
+  inset: 0;
+  display: block;
+  max-width: none;
+}
+
+.marker__shape--hover {
+  opacity: 0;
+}
+
+.marker__icon {
+  position: absolute;
+  left: 11px;
+  top: 10px;
+  color: #000;
+}
+
+.marker--category .marker__icon {
+  color: var(--canvas);
+}
+
+/* Figma "State=Hover"; also used for the selected or list-hovered pin. */
+.pin:hover .marker__shape--hover,
+.pin.is-active .marker__shape--hover {
+  opacity: 1;
+}
+
+.pin:hover .marker--category .marker__icon,
+.pin.is-active .marker--category .marker__icon {
+  color: var(--btn-base);
+}
+
+.pin.is-active .marker {
+  transform: translateY(-4px);
+}
+
+.pin:focus-visible {
+  outline: none;
+}
+
+.pin:focus-visible .marker {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.cluster {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 0 0 2px var(--ink);
+  font: 700 16px var(--font-accent);
+  cursor: pointer;
+}
+
+.cluster.is-active {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.map-error {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 4px;
+  padding: 24px;
+  text-align: center;
+  background: var(--ground);
+}
+
+.map-error__title {
+  font: 700 18px var(--font-head);
+  margin: 0;
+}
+
+.legend {
+  position: absolute;
+  right: 12px;
+  bottom: 16px;
+  z-index: 5;
+  max-width: min(300px, calc(100% - 24px));
+  border: 1.5px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  font-size: 12px;
+}
+
+.legend summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 600;
+}
+
+.legend summary::-webkit-details-marker {
+  display: none;
+}
+
+.legend__body {
+  padding: 0 12px 12px;
+}
+
+.legend__list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+}
+
+.legend__list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  background: var(--card);
+}
+
+.legend__note {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+/* ---------- Summary card ---------- */
+
+.summary-card {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 6;
+  width: min(360px, calc(100% - 32px));
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-tab);
+  background: var(--card);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.summary-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.summary-card__name {
+  font-size: 20px;
+  margin: 0;
+}
+
+.summary-card__line {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.summary-card__cta {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+/* ---------- Panel: list ---------- */
+
+.panel-section {
+  padding-bottom: 24px;
+}
+
+.panel-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 16px 16px 10px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.panel-head h1 {
+  font-size: 20px;
+  margin: 0;
+}
+
+.panel-head__count {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.studio-list {
+  list-style: none;
+  margin: 0;
+  padding: 12px 12px 0;
+  display: grid;
+  gap: 10px;
+}
+
+/* Keep a row scrolled into view clear of the sticky list header. */
+.studio-row {
+  scroll-margin-top: 64px;
+  scroll-margin-bottom: 12px;
+}
+
+.studio-row__link {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 12px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-tab);
+  background: var(--card);
+  text-decoration: none;
+  transition: box-shadow 0.12s ease-out, transform 0.12s ease-out;
+}
+
+.studio-row__name {
+  font: 700 16px/1.25 var(--font-head);
+}
+
+.studio-row__meta {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.studio-row.is-active .studio-row__link {
+  box-shadow: 4px 4px 0 var(--ink);
+  transform: translate(-2px, -2px);
+}
+
+.empty-state {
+  padding: 24px 16px;
+}
+
+/* ---------- Panel: profile ---------- */
+
+.profile {
+  padding: 8px 16px 40px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--touch);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.profile__header {
+  padding: 14px 16px 16px;
+  border: 1.5px solid var(--line);
+  border-top: 12px solid var(--accent);
+  border-radius: var(--radius-tab);
+  background: var(--card);
+}
+
+.profile__cover {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  margin-bottom: 12px;
+  border: 1px solid var(--line-soft);
+}
+
+.profile__band {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile__logo {
+  height: 40px;
+  width: auto;
+}
+
+.profile__name {
+  font-size: 26px;
+  margin: 10px 0 6px;
+}
+
+.profile__lede {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.profile__tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.index-tabs ol {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0 4px;
+  border-bottom: 1.5px solid var(--line);
+}
+
+.index-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 1.5px solid var(--line);
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  background: var(--paper-2);
+  font-size: 12px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.index-tabs a:hover {
+  background: var(--card);
+}
+
+.index-tabs__num,
+.profile__section-num {
+  font-family: var(--font-accent);
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.profile__section {
+  padding: 22px 0 10px;
+  border-bottom: 1px dashed var(--line-soft);
+  scroll-margin-top: 8px;
+}
+
+.profile__section h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 18px;
+}
+
+.profile__section p {
+  font-size: 14px;
+}
+
+.people,
+.projects,
+.contact {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.people li,
+.projects li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--paper-2);
+  font-size: 14px;
+}
+
+.people__name,
+.projects__title {
+  font-weight: 600;
+}
+
+.people__role,
+.projects__meta {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.tags li {
+  padding: 2px 8px;
+  border: 1px dashed var(--ink-2);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.facts {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
+.facts dt {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.facts dd {
+  margin: 0;
+  font-size: 14px;
+}
+
+.contact__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
+.profile__meta {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.gallery img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid var(--line-soft);
+}
+
+/* ---------- Text pages ---------- */
+
+.page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 40px 16px 72px;
+}
+
+/* Full-width layouts such as the Figma "Form" page (1308px at lg). */
+.page--wide {
+  max-width: 1340px;
+  padding-top: 16px;
+}
+
+.page h2 {
+  font-size: 20px;
+  margin-top: 1.6em;
+}
+
+.page__lede {
+  font-size: 16px;
+}
+
+/* Prose lists only; component lists (boxes, checklists) carry their own classes. */
+.page ul:not([class]) {
+  padding-left: 1.2em;
+}
+
+.page ul:not([class]) > li {
+  margin-bottom: 6px;
+}
+
+.notice {
+  padding: 14px 16px;
+  border: 1.5px dashed var(--line);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+/* ---------- Mobile: map first, list in a bottom sheet (FR-14) ---------- */
+
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  border-top: 1.5px solid var(--line);
+  border-radius: 14px 14px 0 0;
+  background: var(--paper);
+  box-shadow: 0 -6px 18px rgb(0 0 0 / 0.12);
+}
+
+.sheet__handle-area {
+  flex: none;
+  touch-action: none;
+}
+
+.sheet__handle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  min-height: var(--touch);
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  cursor: grab;
+}
+
+.sheet__grip {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--ink-2);
+}
+
+.sheet__content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.sheet .panel-head {
+  padding-top: 4px;
+}
+
+@media (max-width: 899px) {
+  .legend {
+    top: 12px;
+    left: 12px;
+    right: auto;
+    bottom: auto;
+  }
+
+  .summary-card {
+    left: 12px;
+    right: 12px;
+    width: auto;
+    bottom: calc(var(--sheet-visible, 0px) + 12px);
+  }
+
+  .filter-bar {
+    padding: 6px 12px;
+  }
+}
+
+@media (pointer: coarse) {
+  .btn,
+  button.tag,
+  button.tag-cat,
+  .filter-bar__clear,
+  .index-tabs a,
+  .panel-toggle,
+  .legend summary {
+    min-height: var(--touch);
+  }
+
+  .maplibregl-ctrl-group button {
+    width: var(--touch);
+    height: var(--touch);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }

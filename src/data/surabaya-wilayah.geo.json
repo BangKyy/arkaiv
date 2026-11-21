@@ -1,0 +1,61 @@
+{
+  "type": "FeatureCollection",
+  "_note": "SIMPLIFIED, SELF-DRAWN PLACEHOLDER (PRD section 13 fallback). Approximate shapes only. Replace with licensed official wilayah/kecamatan boundaries before launch.",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "id": "pusat" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [112.715, -7.235], [112.750, -7.235], [112.755, -7.270], [112.720, -7.275], [112.715, -7.235]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "utara" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [112.700, -7.200], [112.730, -7.195], [112.770, -7.205], [112.800, -7.225],
+          [112.750, -7.235], [112.715, -7.235], [112.700, -7.200]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "timur" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [112.800, -7.225], [112.835, -7.255], [112.845, -7.300], [112.830, -7.345],
+          [112.780, -7.345], [112.755, -7.270], [112.750, -7.235], [112.800, -7.225]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "selatan" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [112.780, -7.345], [112.730, -7.350], [112.680, -7.335], [112.720, -7.275],
+          [112.755, -7.270], [112.780, -7.345]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "barat" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [112.680, -7.335], [112.630, -7.320], [112.595, -7.280], [112.600, -7.235],
+          [112.640, -7.205], [112.700, -7.200], [112.715, -7.235], [112.720, -7.275],
+          [112.680, -7.335]
+        ]]
+      }
+    }
+  ]
+}

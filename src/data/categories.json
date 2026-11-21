@@ -1,0 +1,8 @@
+[
+  { "id": "branding", "name": "Branding", "icon": "branding", "sort": 1 },
+  { "id": "editorial", "name": "Editorial", "icon": "editorial", "sort": 2 },
+  { "id": "motion", "name": "Motion & Animation", "icon": "motion", "sort": 3 },
+  { "id": "advertising", "name": "Advertising", "icon": "advertising", "sort": 4 },
+  { "id": "illustration", "name": "Illustration", "icon": "illustration", "sort": 5 },
+  { "id": "uiux", "name": "UI/UX", "icon": "uiux", "sort": 6 }
+]

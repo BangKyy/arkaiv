@@ -1,0 +1,7 @@
+[
+  { "id": "pusat", "code": "P-SUB", "name": "Surabaya Pusat", "short": "Pusat" },
+  { "id": "utara", "code": "U-SUB", "name": "Surabaya Utara", "short": "Utara" },
+  { "id": "timur", "code": "T-SUB", "name": "Surabaya Timur", "short": "Timur" },
+  { "id": "selatan", "code": "S-SUB", "name": "Surabaya Selatan", "short": "Selatan" },
+  { "id": "barat", "code": "B-SUB", "name": "Surabaya Barat", "short": "Barat" }
+]

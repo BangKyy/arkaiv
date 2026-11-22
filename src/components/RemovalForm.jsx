@@ -2,8 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 import Button from './Button'
 import { TextArea, TextField } from './Fields'
 import { ArrowUpRight, EnvelopeSimple } from './icons'
+import { clearFixedErrors } from '../lib/forms'
 
 const REASON_MAX = 300
+
+function validate(values) {
+  const errors = {}
+  if (!values.name) errors.name = 'Nama studio wajib diisi.'
+  if (!values.role) errors.role = 'Isi hubungan Anda dengan studio.'
+  if (!values.email || !/^\S+@\S+\.\S+$/.test(values.email)) errors.email = 'Masukkan email yang valid.'
+  return errors
+}
 
 /**
  * Removal request, styled like RegisterForm. Validates on submit and hands the values
@@ -23,7 +32,12 @@ export default function RemovalForm({ onSubmit, onValuesChange, submitting = fal
       reason: form.get('reason')?.trim(),
     }
   }
-  const report = () => onValuesChange?.(readValues(formRef.current))
+  // Reports the values and drops the errors of fields that are now filled in correctly.
+  const report = () => {
+    const values = readValues(formRef.current)
+    onValuesChange?.(values)
+    setErrors((prev) => clearFixedErrors(prev, validate(values)))
+  }
 
   // The studio name can arrive prefilled; count it from the start.
   useEffect(() => {
@@ -33,10 +47,7 @@ export default function RemovalForm({ onSubmit, onValuesChange, submitting = fal
   const handleSubmit = (e) => {
     e.preventDefault()
     const values = readValues(e.currentTarget)
-    const next = {}
-    if (!values.name) next.name = 'Nama studio wajib diisi.'
-    if (!values.role) next.role = 'Isi hubungan Anda dengan studio.'
-    if (!values.email || !/^\S+@\S+\.\S+$/.test(values.email)) next.email = 'Masukkan email yang valid.'
+    const next = validate(values)
     setErrors(next)
     if (Object.keys(next).length) {
       e.currentTarget.querySelector('[aria-invalid="true"]')?.focus()

@@ -5,9 +5,21 @@ import { TagCategory } from './Tags'
 import { TextArea, TextField } from './Fields'
 import { ArrowUpRight, EnvelopeSimple, InstagramLogo } from './icons'
 import { categories } from '../lib/catalog'
+import { clearFixedErrors } from '../lib/forms'
 
 const MAX_CATEGORIES = 3
 const DESCRIPTION_MAX = 300
+
+function validate(values) {
+  const errors = {}
+  if (!values.name) errors.name = 'Nama studio wajib diisi.'
+  if (!values.address) errors.address = 'Alamat wajib diisi.'
+  if (!values.area) errors.area = 'Pilih wilayah studio.'
+  if (!values.email || !/^\S+@\S+\.\S+$/.test(values.email)) errors.email = 'Masukkan email yang valid.'
+  if (!values.website && !values.instagram) errors.website = 'Isi website atau Instagram (min salah satu).'
+  if (!values.categories.length) errors.categories = 'Pilih minimal satu kategori.'
+  return errors
+}
 
 const Optional = ({ children }) => (
   <>
@@ -44,7 +56,12 @@ export default function RegisterForm({ onSubmit, onValuesChange, submitting = fa
       description: form.get('description')?.trim(),
     }
   }
-  const report = () => onValuesChange?.(readValues(formRef.current))
+  // Reports the values and drops the errors of fields that are now filled in correctly.
+  const report = () => {
+    const values = readValues(formRef.current)
+    onValuesChange?.(values)
+    setErrors((prev) => clearFixedErrors(prev, validate(values)))
+  }
 
   // Region and categories are not inputs, so their changes are reported from here.
   useEffect(() => {
@@ -54,13 +71,7 @@ export default function RegisterForm({ onSubmit, onValuesChange, submitting = fa
   const handleSubmit = (e) => {
     e.preventDefault()
     const values = readValues(e.currentTarget)
-    const next = {}
-    if (!values.name) next.name = 'Nama studio wajib diisi.'
-    if (!values.address) next.address = 'Alamat wajib diisi.'
-    if (!values.area) next.area = 'Pilih wilayah studio.'
-    if (!values.email || !/^\S+@\S+\.\S+$/.test(values.email)) next.email = 'Masukkan email yang valid.'
-    if (!values.website && !values.instagram) next.website = 'Isi website atau Instagram (min salah satu).'
-    if (!values.categories.length) next.categories = 'Pilih minimal satu kategori.'
+    const next = validate(values)
     setErrors(next)
     if (Object.keys(next).length) {
       e.currentTarget.querySelector('[aria-invalid="true"]')?.focus()

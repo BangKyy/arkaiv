@@ -6,6 +6,7 @@ import { TagCategory } from './Tags'
 import { TextArea, TextField } from './Fields'
 import { ArrowUpRight, EnvelopeSimple, InstagramLogo, WhatsappLogo } from './icons'
 import { categories } from '../lib/catalog'
+import { clearFixedErrors } from '../lib/forms'
 
 const MAX_CATEGORIES = 3
 const DESCRIPTION_MAX = 300
@@ -74,6 +75,41 @@ const parseCoords = (s) => {
   return Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? { lat, lng } : null
 }
 
+// Rows left completely empty are dropped instead of flagged.
+const filledPeople = (people) => people.filter((p) => p.internship || [p.name, p.role, p.photo].some((x) => x.trim()))
+const filledProjects = (projects) =>
+  projects.filter((p) => p.category || [p.title, p.year, p.description, p.url, p.image].some((x) => x.trim()))
+
+function validate(v, { isNew, takenSlugs }) {
+  const errors = {}
+  if (!v.name.trim()) errors.name = 'Nama studio wajib diisi.'
+  if (isNew) {
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(v.slug)) errors.slug = 'Gunakan huruf kecil, angka, dan tanda hubung.'
+    else if (takenSlugs?.has(v.slug)) errors.slug = 'Slug ini sudah dipakai studio lain.'
+  }
+  if (!v.description.trim()) errors.description = 'Deskripsi wajib diisi (tampil di peta dan profil).'
+  if (!v.address.trim()) errors.address = 'Alamat wajib diisi.'
+  if (!v.area) errors.area = 'Pilih wilayah studio.'
+  if (!parseCoords(v.coords)) errors.coords = 'Tulis koordinat sebagai "lintang, bujur", mis. -7.2575, 112.7521.'
+  if (!v.website.trim() && !v.instagram.trim()) errors.website = 'Isi website atau Instagram (min salah satu).'
+  if (!v.categories.length) errors.categories = 'Pilih minimal satu kategori.'
+  const founded = v.founded_year.trim()
+  if (founded && !(/^\d{4}$/.test(founded) && founded >= 1900 && founded <= 2100)) {
+    errors.founded_year = 'Tulis tahun empat angka, mis. 2011.'
+  }
+  if (v.contact_email.trim() && !/^\S+@\S+\.\S+$/.test(v.contact_email.trim())) {
+    errors.contact_email = 'Masukkan email yang valid.'
+  }
+  filledPeople(v.people).forEach((p, i) => {
+    if (!p.name.trim()) errors[`people.${i}.name`] = 'Nama wajib diisi (atau hapus baris ini).'
+  })
+  filledProjects(v.projects).forEach((p, i) => {
+    if (!p.title.trim()) errors[`projects.${i}.title`] = 'Judul wajib diisi (atau hapus baris ini).'
+    if (p.year.trim() && !/^\d{4}$/.test(p.year.trim())) errors[`projects.${i}.year`] = 'Tulis tahun empat angka.'
+  })
+  return errors
+}
+
 /**
  * The record an approval writes to `studios`, in the RegisterForm style. The admin
  * completes what visitors cannot give (slug, coordinates, status) and checks the rest.
@@ -123,7 +159,9 @@ export default function StudioEditor({
     opening_hours: initial.opening_hours ?? '',
   }))
   const [slugTouched, setSlugTouched] = useState(!isNew)
-  const [errors, setErrors] = useState({})
+  // Errors are set on submit; a field drops its error as soon as it is filled in correctly.
+  const [submitErrors, setErrors] = useState({})
+  const errors = clearFixedErrors(submitErrors, validate(values, { isNew, takenSlugs }))
 
   const set = (key) => (e) => {
     const value = e?.target ? e.target.value : e
@@ -144,35 +182,10 @@ export default function StudioEditor({
   const handleSubmit = (e) => {
     e.preventDefault()
     const v = { ...values, name: values.name.trim(), description: values.description.trim(), address: values.address.trim() }
-    const next = {}
-    if (!v.name) next.name = 'Nama studio wajib diisi.'
-    if (isNew) {
-      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(v.slug)) next.slug = 'Gunakan huruf kecil, angka, dan tanda hubung.'
-      else if (takenSlugs?.has(v.slug)) next.slug = 'Slug ini sudah dipakai studio lain.'
-    }
-    if (!v.description) next.description = 'Deskripsi wajib diisi (tampil di peta dan profil).'
-    if (!v.address) next.address = 'Alamat wajib diisi.'
-    if (!v.area) next.area = 'Pilih wilayah studio.'
-    if (!coords) next.coords = 'Tulis koordinat sebagai "lintang, bujur", mis. -7.2575, 112.7521.'
-    if (!v.website.trim() && !v.instagram.trim()) next.website = 'Isi website atau Instagram (min salah satu).'
-    if (!v.categories.length) next.categories = 'Pilih minimal satu kategori.'
+    const next = validate(v, { isNew, takenSlugs })
     const founded = v.founded_year.trim()
-    if (founded && !(/^\d{4}$/.test(founded) && founded >= 1900 && founded <= 2100)) {
-      next.founded_year = 'Tulis tahun empat angka, mis. 2011.'
-    }
-    if (v.contact_email.trim() && !/^\S+@\S+\.\S+$/.test(v.contact_email.trim())) {
-      next.contact_email = 'Masukkan email yang valid.'
-    }
-    // Rows left completely empty are dropped instead of flagged.
-    const people = v.people.filter((p) => p.internship || [p.name, p.role, p.photo].some((x) => x.trim()))
-    people.forEach((p, i) => {
-      if (!p.name.trim()) next[`people.${i}.name`] = 'Nama wajib diisi (atau hapus baris ini).'
-    })
-    const projects = v.projects.filter((p) => p.category || [p.title, p.year, p.description, p.url, p.image].some((x) => x.trim()))
-    projects.forEach((p, i) => {
-      if (!p.title.trim()) next[`projects.${i}.title`] = 'Judul wajib diisi (atau hapus baris ini).'
-      if (p.year.trim() && !/^\d{4}$/.test(p.year.trim())) next[`projects.${i}.year`] = 'Tulis tahun empat angka.'
-    })
+    const people = filledPeople(v.people)
+    const projects = filledProjects(v.projects)
     setErrors(next)
     if (Object.keys(next).length) {
       e.currentTarget.querySelector('[aria-invalid="true"]')?.focus()

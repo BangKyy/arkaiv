@@ -6,9 +6,8 @@ import fourLg from '../assets/404/four-lg.svg'
 import fourSm from '../assets/404/four-sm.svg'
 import t from '../i18n/id'
 
-// Official arkaiv address for problem reports. Without it the button falls back to the
-// correction form, so it never leads nowhere.
-const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL
+// Official arkaiv address for problem reports; VITE_CONTACT_EMAIL overrides it.
+const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || 'directory.arkaiv@gmail.com'
 
 // Figma "Pages/Error 404" ("404 Error", Size lg on desktop and tablet, sm on phones).
 export default function NotFound() {
@@ -16,17 +15,12 @@ export default function NotFound() {
   const { pathname, search } = useLocation()
 
   // The email names the missing address so the report can be acted on.
-  const report = CONTACT_EMAIL
-    ? {
-        as: 'a',
-        href: `mailto:${CONTACT_EMAIL}?${new URLSearchParams({
-          subject: t.notFound.reportSubject,
-          body: t.notFound.reportBody(`${window.location.origin}${pathname}${search}`),
-        })
-          .toString()
-          .replaceAll('+', '%20')}`,
-      }
-    : { as: Link, to: '/daftar?jenis=koreksi' }
+  const reportHref = `mailto:${CONTACT_EMAIL}?${new URLSearchParams({
+    subject: t.notFound.reportSubject,
+    body: t.notFound.reportBody(`${window.location.origin}${pathname}${search}`),
+  })
+    .toString()
+    .replaceAll('+', '%20')}`
 
   return (
     <article className="error-404">
@@ -34,7 +28,7 @@ export default function NotFound() {
       <div className="error-404__text">
         <h1 className="error-404__title">{t.notFound.title}</h1>
         <div className="error-404__actions">
-          <Button {...report} variant="outlined" size="xl" icon={ArrowUpRight}>
+          <Button as="a" href={reportHref} variant="outlined" size="xl" icon={ArrowUpRight}>
             {t.notFound.report}
           </Button>
           <Button as={Link} to="/" size="xl" icon={ArrowUpRight}>

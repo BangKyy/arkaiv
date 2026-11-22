@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { useParams } from 'react-router'
 import { useDirectory } from '../state/directory'
 import Button from '../components/Button'
 import CardPager from '../components/CardPager'
@@ -8,10 +8,11 @@ import SectionHeading from '../components/SectionHeading'
 import { StepBox } from '../components/LabeledBox'
 import { ArchiveBadge, CategoryBadge, CodeBadge } from '../components/RegionalBadge'
 import { Tag, TagCategory } from '../components/Tags'
-import { ArrowLeft, ArrowUpRight, Check, Copy } from '../components/icons'
+import { ArrowUpRight, Check, Copy } from '../components/icons'
 import { categoryName, getArea, googleMapsUrl, instagramUrl } from '../lib/catalog'
 import { formatDate, useMediaQuery, usePageMeta } from '../lib/hooks'
 import { track } from '../lib/analytics'
+import NotFound from './NotFound'
 import placeholder from '../assets/profile-placeholder.png'
 import t from '../i18n/id'
 
@@ -63,28 +64,18 @@ function buildSections(s, portfolio) {
  */
 export default function StudioProfile() {
   const { slug } = useParams()
-  const { bySlug } = useDirectory()
+  const { bySlug, ready } = useDirectory()
   const studio = bySlug.get(slug)
 
-  usePageMeta(studio?.name ?? t.profile.notFound, studio?.description)
+  usePageMeta(studio?.name ?? (ready ? t.notFound.title : null), studio?.description)
 
   useEffect(() => {
     if (studio) track('profile_view', { studio: studio.slug })
   }, [studio])
 
-  if (!studio) {
-    return (
-      <article className="page">
-        <SectionHeading as="h1" eyebrow="404">
-          {t.profile.notFound}
-        </SectionHeading>
-        <p>{t.profile.notFoundBody}</p>
-        <Button as={Link} to="/peta" variant="outlined" size="lg" icon={ArrowLeft} iconPosition="left">
-          {t.profile.back}
-        </Button>
-      </article>
-    )
-  }
+  // A slug that is not in the archive gets the site's 404 page, once the data is final;
+  // while Supabase is still loading the page stays empty rather than flashing a 404.
+  if (!studio) return ready ? <NotFound /> : <article className="studio-page" aria-busy="true" />
 
   const portfolio = portfolioItems(studio)
   const sections = buildSections(studio, portfolio)

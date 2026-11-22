@@ -54,7 +54,6 @@ export default {
   },
 
   profile: {
-    back: 'Kembali ke peta',
     direct: 'Direct',
     directLabel: (name) => `Buka halaman ${name}`,
     sectionEyebrow: (n) => `Bagian ${String(n).padStart(2, '0')}`,
@@ -91,8 +90,6 @@ export default {
     openMaps: 'Buka di Google Maps',
     newTab: '(membuka tab baru)',
     lastVerified: (date) => `Terakhir diverifikasi pada tanggal ${date}`,
-    notFound: 'Studio tidak ditemukan.',
-    notFoundBody: 'Tautan ini mungkin sudah berubah atau studio sudah tidak terdaftar.',
   },
 
   notFound: {

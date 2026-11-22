@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { DirectoryContext } from './directory'
-import { loadSnapshot, refreshStudios } from '../lib/studios'
+import { hasSupabase, loadSnapshot, refreshStudios } from '../lib/studios'
 import { applyFilters, readFilters, writeFilters } from '../lib/filters'
 import { track } from '../lib/analytics'
 
@@ -11,6 +11,9 @@ import { track } from '../lib/analytics'
  */
 export default function DirectoryProvider({ children }) {
   const [studios, setStudios] = useState(loadSnapshot)
+  // True once the studios are final: right away without Supabase, else after the refresh
+  // (or its failure). Until then an unknown slug may still arrive, so it is not a 404 yet.
+  const [ready, setReady] = useState(!hasSupabase)
   const [searchParams, setSearchParams] = useSearchParams()
   const [hoveredSlug, setHoveredSlug] = useState(null)
   // The pin whose summary card is open (US-02). Profiles use the route instead.
@@ -19,7 +22,9 @@ export default function DirectoryProvider({ children }) {
   useEffect(() => {
     let alive = true
     refreshStudios().then((fresh) => {
-      if (alive && fresh) setStudios(fresh)
+      if (!alive) return
+      if (fresh) setStudios(fresh)
+      setReady(true)
     })
     return () => {
       alive = false
@@ -47,6 +52,7 @@ export default function DirectoryProvider({ children }) {
   const value = useMemo(
     () => ({
       studios,
+      ready,
       visible,
       bySlug,
       filters,
@@ -58,7 +64,7 @@ export default function DirectoryProvider({ children }) {
       selectedSlug: visible.some((s) => s.slug === selectedSlug) ? selectedSlug : null,
       setSelectedSlug,
     }),
-    [studios, visible, bySlug, filters, setCategories, hoveredSlug, selectedSlug],
+    [studios, ready, visible, bySlug, filters, setCategories, hoveredSlug, selectedSlug],
   )
 
   return <DirectoryContext.Provider value={value}>{children}</DirectoryContext.Provider>

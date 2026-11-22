@@ -19,17 +19,19 @@ const areaOf = (id) => areas.find((a) => a.id === id)
 const esc = (s = '') =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
 
-function render({ path, title, description, image, body }) {
+// `noindex` pages (404, admin) get no canonical or og:url and stay out of search results.
+function render({ path, title, description, image, body, noindex = false }) {
   const fullTitle = title ? `${title} · ${SITE}` : `${SITE} · ${TAGLINE}`
   const abs = (p) => (SITE_URL ? `${SITE_URL}${p}` : p)
   const head = [
-    SITE_URL && `<link rel="canonical" href="${esc(abs(path))}" />`,
+    noindex && `<meta name="robots" content="noindex" />`,
+    SITE_URL && !noindex && `<link rel="canonical" href="${esc(abs(path))}" />`,
     `<meta property="og:site_name" content="${SITE}" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:locale" content="id_ID" />`,
     `<meta property="og:title" content="${esc(fullTitle)}" />`,
     `<meta property="og:description" content="${esc(description)}" />`,
-    SITE_URL && `<meta property="og:url" content="${esc(abs(path))}" />`,
+    SITE_URL && !noindex && `<meta property="og:url" content="${esc(abs(path))}" />`,
     image && `<meta property="og:image" content="${esc(image.startsWith('http') ? image : abs(image))}" />`,
     `<meta name="twitter:card" content="${image ? 'summary_large_image' : 'summary'}" />`,
   ]
@@ -96,6 +98,22 @@ const home = render({
 await writeFile(new URL('index.html', dist), home)
 // Old About address: the app redirects to /, the static copy keeps it from 404ing on hosts without a SPA fallback.
 await write('/tentang/', home)
+
+// Static hosts (Vercel, Netlify, GitHub Pages) answer unknown addresses with dist/404.html
+// and a 404 status. It is the app shell, so the router still runs: it shows the Figma 404
+// page, and studios added in Supabase after the build still open.
+await writeFile(
+  new URL('404.html', dist),
+  render({
+    path: '/404',
+    title: 'Halaman tidak ditemukan',
+    description: DESCRIPTION,
+    body: '<h1>Halaman tidak ditemukan</h1><p><a href="/">Kembali ke beranda</a></p>',
+    noindex: true,
+  }),
+)
+// The admin dashboard is client-only; this shell lets /admin load with a 200.
+await write('/admin/', render({ path: '/admin/', title: 'Admin', description: DESCRIPTION, body: '', noindex: true }))
 
 if (SITE_URL) {
   const urls = ['/', ...pages].map((p) => `  <url><loc>${esc(SITE_URL + p)}</loc></url>`).join('\n')

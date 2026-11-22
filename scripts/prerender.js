@@ -97,7 +97,7 @@ if (SITE_URL) {
     new URL('sitemap.xml', dist),
     `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`,
   )
-  await writeFile(new URL('robots.txt', dist), `User-agent: *\nAllow: /\nSitemap: ${SITE_URL}/sitemap.xml\n`)
+  await writeFile(new URL('robots.txt', dist), `User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: ${SITE_URL}/sitemap.xml\n`)
 }
 
 console.log(`prerender: ${published.length} studio pages, ${staticPages.length} static pages${SITE_URL ? ', sitemap.xml' : ' (set VITE_SITE_URL for canonical URLs and a sitemap)'}`)

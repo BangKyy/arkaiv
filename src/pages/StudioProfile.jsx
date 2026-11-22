@@ -277,6 +277,10 @@ function Contact({ studio }) {
         <Link to={{ pathname: '/daftar', search: `?koreksi=${studio.slug}` }} state={{ from: search }}>
           {t.profile.report}
         </Link>
+        <br />
+        <Link to={{ pathname: '/daftar', search: `?hapus=${studio.slug}` }} state={{ from: search }}>
+          {t.profile.removal}
+        </Link>
       </p>
     </>
   )

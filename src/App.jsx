@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { Outlet, Route, Routes, useMatch } from 'react-router'
 import { MotionConfig } from 'motion/react'
 import DirectoryProvider from './state/DirectoryProvider'
@@ -12,12 +13,16 @@ import NotFound from './pages/NotFound'
 import { isSample } from './lib/studios'
 import t from './i18n/id'
 
+// Admins only, so visitors never download it.
+const Admin = lazy(() => import('./pages/Admin'))
+
 /**
  * Information architecture (PRD section 8): four destinations, map first.
  *   /                Explore: map + list + filters + summary card
  *   /studio/:slug    Studio profile, in the Explore layout (stable URL, QR target)
  *   /tentang         About
- *   /daftar          Submit or correct a studio (?koreksi=<slug>)
+ *   /daftar          Submit, correct or remove a studio (?koreksi=<slug>, ?hapus=<slug>)
+ *   /admin           Review queue for those submissions (admins only, not linked)
  */
 export default function App() {
   return (
@@ -29,6 +34,14 @@ export default function App() {
         </Route>
         <Route path="tentang" element={<About />} />
         <Route path="daftar" element={<Submit />} />
+        <Route
+          path="admin"
+          element={
+            <Suspense fallback={null}>
+              <Admin />
+            </Suspense>
+          }
+        />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

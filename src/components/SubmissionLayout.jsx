@@ -67,7 +67,7 @@ export default function SubmissionLayout({
         </aside>
 
         <div className="submission__main">
-          <SectionHeading as="h1" className="submission__heading">
+          <SectionHeading className="submission__heading">
             {title}
           </SectionHeading>
           {children}

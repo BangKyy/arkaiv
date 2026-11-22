@@ -74,6 +74,7 @@ export default {
     newTab: '(membuka tab baru)',
     lastVerified: 'Terakhir diverifikasi',
     report: 'Ada data yang salah? Ajukan koreksi',
+    removal: 'Pemilik studio? Minta listing dihapus',
     notFound: 'Studio tidak ditemukan.',
     notFoundBody: 'Tautan ini mungkin sudah berubah atau studio sudah tidak terdaftar.',
   },

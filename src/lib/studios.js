@@ -15,13 +15,17 @@ const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
 export const hasSupabase = Boolean(SUPABASE_URL && SUPABASE_KEY)
 
+// Loaded lazily so the Supabase client never delays the map or list.
+async function getClient() {
+  const { createClient } = await import('@supabase/supabase-js')
+  return createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } })
+}
+
 /** Returns fresh studios, or null when Supabase is not configured or unreachable. */
 export async function refreshStudios({ timeoutMs = 6000 } = {}) {
   if (!hasSupabase) return null
   try {
-    // Loaded lazily so the Supabase client never delays the map or list.
-    const { createClient } = await import('@supabase/supabase-js')
-    const client = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } })
+    const client = await getClient()
     const query = client
       .from('studios')
       .select(STUDIO_SELECT)
@@ -33,4 +37,18 @@ export async function refreshStudios({ timeoutMs = 6000 } = {}) {
   } catch {
     return null
   }
+}
+
+/**
+ * FR-13: queues a request in `submissions` (always pending, never read back; see
+ * supabase/schema.sql). `kind` is 'new' | 'correction' | 'removal'. Throws on failure.
+ */
+export async function sendSubmission({ kind, studioSlug, payload, timeoutMs = 10000 }) {
+  if (!hasSupabase) throw new Error('Supabase is not configured')
+  const client = await getClient()
+  const { error } = await client
+    .from('submissions')
+    .insert({ kind, studio_slug: studioSlug ?? null, payload })
+    .abortSignal(AbortSignal.timeout(timeoutMs))
+  if (error) throw error
 }

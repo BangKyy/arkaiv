@@ -1250,6 +1250,470 @@ img {
   }
 }
 
+/* Figma "Pages/Studio Regist Pages": the About hero and step boxes, around the "Form"
+   organism. Unlike About, the title keeps Doto on every size, the eyebrow stays 16px,
+   and the review section keeps 100px of air on phones. */
+.about--submit {
+  border-bottom: 1px solid var(--btn-base);
+}
+
+.submit__form {
+  padding-top: 10px;
+  border-top: 1px solid var(--btn-base);
+}
+
+/* lg closes the form with a second rule; md and sm close it inside the organism.
+   1220px is where the form's container reaches the organism's lg size (1000px). */
+@media (min-width: 1220px) {
+  .submit__form {
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--btn-base);
+  }
+}
+
+.submit__process {
+  padding-block: 100px;
+}
+
+@media (max-width: 1099px) {
+  .about--submit .about__title-accent {
+    font-family: var(--font-accent);
+    font-weight: 900;
+  }
+}
+
+@media (max-width: 727px) {
+  .about--submit .about__eyebrow {
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0.1em;
+  }
+}
+
+/* ---------- Admin dashboard (/admin): no Figma screen; About hero + Form styles ---------- */
+
+.about--admin .about__title {
+  font-size: clamp(56px, 9vw, 120px);
+  line-height: 0.92;
+}
+
+.about--admin .about__title-accent {
+  font-family: var(--font-accent);
+  font-weight: 900;
+}
+
+.admin {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding-bottom: 100px;
+}
+
+.admin__muted {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.admin__login {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  max-width: 440px;
+}
+
+.admin__login .field,
+.admin__login .notice {
+  align-self: stretch;
+}
+
+.admin__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 16px;
+  border-block: 1px solid var(--btn-base);
+}
+
+.admin__bar-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.admin__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 40px;
+}
+
+.choice--row .choice__options {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.choice--row .choice__btn {
+  flex: none;
+}
+
+.notice--error {
+  border-color: var(--error-600);
+  color: var(--error-800);
+}
+
+.admin__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (min-width: 1000px) {
+  .admin__layout {
+    grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  }
+
+  .admin__side {
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+  }
+}
+
+.admin__side-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 16px;
+}
+
+.admin__side-tools .search {
+  align-self: stretch;
+}
+
+.admin__tabs {
+  display: flex;
+  gap: 32px;
+  border-bottom: 1px solid var(--btn-base);
+}
+
+.admin__tabs a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: -1px;
+  padding: 8px 0 12px;
+  border-bottom: 3px solid transparent;
+  font: 700 28px/36px var(--font-head);
+  letter-spacing: -0.02em;
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.admin__tabs a:hover {
+  color: var(--btn-base);
+}
+
+.admin__tabs a[aria-current='page'] {
+  border-bottom-color: var(--btn-base);
+  color: var(--btn-base);
+}
+
+.admin__tab-count {
+  font: 400 13px/18px var(--font-body);
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+@media (max-width: 727px) {
+  .admin__tabs {
+    gap: 20px;
+  }
+
+  .admin__tabs a {
+    flex-direction: column;
+    gap: 0;
+    font-size: 22px;
+    line-height: 28px;
+  }
+}
+
+.review-status--published {
+  color: var(--cat-editorial);
+}
+
+.review-status--draft {
+  color: var(--text-secondary);
+}
+
+.review-status--needs_review {
+  color: var(--cat-motion);
+}
+
+.admin__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--btn-base);
+}
+
+.admin__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  background: transparent;
+  color: var(--btn-base);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin__item:hover {
+  background: var(--neutral-50);
+}
+
+.admin__item[aria-current='true'] {
+  background: var(--btn-base);
+  color: var(--canvas);
+}
+
+.admin__item:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+
+.admin__item-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin__item-name {
+  font: 700 18px/24px var(--font-head);
+}
+
+.admin__item-date {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.review-status {
+  padding: 0 6px;
+  border: 1px solid currentColor;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.review-status--pending {
+  color: var(--cat-motion);
+}
+
+.review-status--approved {
+  color: var(--cat-editorial);
+}
+
+.review-status--rejected {
+  color: var(--error-600);
+}
+
+.admin__item[aria-current='true'] .review-status {
+  color: var(--canvas);
+}
+
+.admin__detail {
+  padding: 24px;
+  border: 1px solid var(--btn-base);
+  background: var(--surface);
+  scroll-margin-top: 16px;
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.review__head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--btn-base);
+}
+
+.review__kind,
+.review__meta,
+.review__label {
+  margin: 0;
+}
+
+.review__kind {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.review__title {
+  margin: 0;
+  font: 700 36px/42px var(--font-head);
+  letter-spacing: -0.02em;
+  color: var(--btn-base);
+  overflow-wrap: anywhere;
+}
+
+.review__meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.review__section,
+.review__decide {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.review__decide {
+  gap: 20px;
+  padding-top: 24px;
+  border-top: 1px solid var(--btn-base);
+}
+
+.review__label {
+  font: 900 14px/20px var(--font-accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--btn-base);
+}
+
+.review__facts {
+  display: grid;
+  margin: 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.review__facts > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) minmax(0, 1fr);
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.review__facts dt {
+  color: var(--text-secondary);
+}
+
+.review__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.review__table-wrap {
+  overflow-x: auto;
+}
+
+.review__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.review__table :is(th, td) {
+  padding: 8px;
+  border-bottom: 1px solid var(--line-soft);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.review__table thead th {
+  border-bottom-color: var(--btn-base);
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.review__table tbody th {
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+/* Rows the correction changes: illustration-yellow tint (category info token). */
+.review__table tr.is-changed td:last-child {
+  background: var(--cat-illustration-info);
+  font-weight: 700;
+}
+
+.review__note {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+  white-space: pre-line;
+}
+
+.review__select {
+  appearance: auto;
+  cursor: pointer;
+}
+
+.review__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.review__decide .field {
+  --field-color: var(--btn-base);
+}
+
+.review__decide .field__label {
+  color: var(--btn-base);
+}
+
+.studio-editor__primary {
+  padding: 0 4px;
+  border: 1px solid currentColor;
+  font-size: 10px;
+  line-height: 14px;
+  text-transform: uppercase;
+}
+
+.studio-editor__coords {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.studio-editor__maps {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--btn-base);
+}
+
+@media (max-width: 727px) {
+  .admin__detail {
+    padding: 16px;
+  }
+
+  .review__facts > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
+
 /* "Box with inner labels" Category lg falls back to one column when the box is narrow. */
 .labeled-box--list {
   container-type: inline-size;
@@ -1525,7 +1989,7 @@ img {
 
 .register-form__row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px 40px;
   align-items: start;
 }
@@ -1542,7 +2006,7 @@ img {
 .register-form .register-form__categories legend {
   padding: 0;
   margin-bottom: 6px;
-  color: var(--text-border);
+  color: var(--btn-base);
 }
 
 .register-form__tags {
@@ -1563,7 +2027,7 @@ img {
    (two columns down to the ~700px Size=md layout). */
 @container (max-width: 560px) {
   .register-form__row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   /* Size=sm lists Instagram before Website. */
@@ -2361,12 +2825,6 @@ button.tag-cat {
   max-width: 680px;
   margin: 0 auto;
   padding: 40px 16px 72px;
-}
-
-/* Full-width layouts such as the Figma "Form" page (1308px at lg). */
-.page--wide {
-  max-width: 1340px;
-  padding-top: 16px;
 }
 
 .page h2 {

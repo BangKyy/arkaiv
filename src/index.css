@@ -148,7 +148,7 @@ img {
   flex-direction: column;
 }
 
-/* Figma "Organism/Global Header": lg bar 32/80 padding, 32/30 on tablet, sm-2 below 728px. */
+/* Figma "Organism/Global Header": lg bar 32/80 padding, 32/30 on tablet, sm-1 below 728px. */
 .global-header {
   position: relative;
   z-index: 20;
@@ -209,14 +209,14 @@ img {
   }
 }
 
-/* Figma Size=sm-2: centered logo; navigation moves to the floating menu. */
-.float-nav {
+/* Figma Size=sm-1: logo and a menu button; the open menu drops below the bar. */
+.global-header__toggle,
+.mobile-menu {
   display: none;
 }
 
 @media (max-width: 727px) {
   .global-header__bar {
-    justify-content: center;
     padding: 32px;
   }
 
@@ -224,93 +224,66 @@ img {
     display: none;
   }
 
-  .float-nav {
-    display: flex;
-    justify-content: center;
-    z-index: 30;
+  .global-header__toggle {
+    display: inline-grid;
+    place-items: center;
+    padding: 11px 10px 9px;
+    border: 1px solid var(--btn-base);
+    background: var(--canvas);
+    color: var(--btn-base);
+    cursor: pointer;
   }
 
-  .float-nav--bottom {
-    position: fixed;
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
-    pointer-events: none;
+  /* Same states as an outlined button. */
+  .global-header__toggle:hover {
+    border-color: var(--btn-hover);
+    color: var(--btn-hover);
   }
 
-  .float-nav--bottom > * {
-    pointer-events: auto;
+  .global-header__toggle:is(:active, :focus) {
+    border-color: var(--btn-pressed);
+    color: var(--btn-pressed);
   }
 
-  /* On the map the bottom edge belongs to the list sheet, so the menu sits in the bar. */
-  .float-nav--bar {
+  /* Overlays the page below the header's own bottom rule instead of pushing it down. */
+  .mobile-menu {
     position: absolute;
-    top: 28px;
-    right: 16px;
-  }
-
-  .float-nav--bar .float-nav__panel {
-    position: absolute;
-    top: 0;
+    top: calc(100% + 1px);
+    left: 0;
     right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 32px;
+    border-bottom: 1px solid var(--btn-base);
+    background: var(--canvas);
   }
 }
 
-/* Closed: dark tile with a paper outline and the GridFour icon. */
-.float-nav__toggle {
-  display: inline-grid;
-  place-items: center;
-  padding: 10px;
-  border: 1px solid var(--canvas);
-  background: var(--btn-base);
-  color: var(--canvas);
-  cursor: pointer;
-}
-
-/* Open: dark panel of paper-outlined sm buttons and a paper close tile. */
-.float-nav__panel {
+.mobile-menu__links {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  padding: 6px;
-  border: 1px solid var(--canvas);
-  background: var(--btn-base);
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.float-nav__link {
-  align-self: stretch;
-  margin: 4px;
-  padding: 6px 16px;
-  border: 1px solid var(--canvas);
-  font: 500 12px/18px var(--font-body);
-  text-align: center;
-  text-transform: uppercase;
-  text-decoration: none;
-  white-space: nowrap;
-  color: var(--canvas);
+.btn.mobile-menu__link {
+  --btn-edge: 1px;
+  width: 100%;
+  justify-content: space-between;
 }
 
-.float-nav__link[aria-current='page'] {
-  background: var(--canvas);
-  color: var(--btn-base);
-}
-
-.float-nav__close {
-  display: inline-grid;
-  place-items: center;
-  padding: 4px;
-  border: 1px solid var(--canvas);
-  background: var(--canvas);
-  color: var(--btn-base);
-  cursor: pointer;
-}
-
-/* Figma "Organism/Global Footer" */
+/* Figma "Organism/Global Footer": Size=lg (40px tall padding, 18/28 text), Size=sm on
+   phones and in the map's list panel (80px, 12/18). */
 .global-footer {
   display: flex;
   justify-content: center;
   padding: 40px 80px;
+  /* Figma draws the rule inside the frame, so it adds no height. */
+  box-shadow: inset 0 1px 0 var(--btn-base);
+  background: var(--canvas);
 }
 
 .global-footer p {
@@ -321,12 +294,21 @@ img {
   color: var(--btn-base);
 }
 
-@media (max-width: 600px) {
-  .global-footer {
+.global-footer--sm {
+  padding: 80px 16px;
+}
+
+.global-footer--sm p {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+@media (max-width: 727px) {
+  .global-footer--auto {
     padding: 80px 16px;
   }
 
-  .global-footer p {
+  .global-footer--auto p {
     font-size: 12px;
     line-height: 18px;
   }
@@ -346,23 +328,31 @@ img {
   position: relative;
 }
 
+/* Canvas, so a short page (404) has no strip of body color under its footer. */
 .main--page {
   overflow-y: auto;
+  background: var(--canvas);
 }
 
 /* ---------- Buttons, chips, tags ---------- */
 
 /* Figma "Button/Buttons" (+ "destructive"). --btn-color is the state color: the
-   fill of a primary button, the border and text of outlined and link buttons. */
+   fill of a primary button, the edge and text of outlined and link buttons.
+   --btn-edge is the outline width (1.5px on outlined buttons). It is drawn as an inset
+   shadow inside matching padding because browsers round fractional borders down to
+   whole pixels, which made outlined buttons 2px smaller than the Figma symbols. */
 .btn {
   --btn-color: var(--btn-base);
+  --btn-edge: 0px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  padding: var(--btn-pt) var(--btn-px) var(--btn-pb);
+  padding: calc(var(--btn-pt) + var(--btn-edge)) calc(var(--btn-px) + var(--btn-edge))
+    calc(var(--btn-pb) + var(--btn-edge));
   border: 0;
   border-radius: 0;
+  box-shadow: inset 0 0 0 var(--btn-edge) var(--btn-color);
   font: 500 var(--btn-fs) / var(--btn-lh) var(--font-body);
   text-align: center;
   text-transform: uppercase;
@@ -423,9 +413,10 @@ img {
   --btn-color: var(--btn-hover);
 }
 
-/* Figma "State=Focused" (token Colors/Button/Pressed). */
+/* Figma "State=Focused" (token Colors/Button/Pressed): while pressed, and from a click or
+   Tab until focus moves on. Keyboard focus also gets the global blue ring. */
 .btn:active,
-.btn:focus-visible {
+.btn:focus {
   --btn-color: var(--btn-pressed);
 }
 
@@ -441,7 +432,7 @@ img {
 }
 
 .btn--outlined {
-  border: 1.5px solid var(--btn-color);
+  --btn-edge: 1.5px;
   background: transparent;
   color: var(--btn-color);
 }
@@ -708,11 +699,6 @@ img {
   color: var(--error-500);
 }
 
-.field__box:has(:focus-visible) {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
-}
-
 .field__input {
   flex: 1;
   min-width: 0;
@@ -723,7 +709,11 @@ img {
   color: var(--field-value);
 }
 
-.field__input:focus-visible {
+/* Figma State=Focused is the --field-color change alone (1px Colors/Button/Pressed border
+   and value), with no ring, also for the dropdown button. */
+.field__input:focus-visible,
+.field__select:focus-visible,
+.field__box:focus-visible {
   outline: none;
 }
 
@@ -794,9 +784,9 @@ img {
   border-color: var(--btn-hover);
 }
 
-.search:has(.search__input:focus-visible) {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
+/* Focused, as on the input fields: from a click or Tab into the box. */
+.search:focus-within {
+  border-color: var(--btn-pressed);
 }
 
 .search--sm.search--action {
@@ -1123,7 +1113,8 @@ img {
   background: var(--canvas);
 }
 
-.about__note {
+.about__note,
+.studio-page__note {
   display: flex;
   gap: 12px;
   margin: 16px 0 0;
@@ -1133,7 +1124,8 @@ img {
   color: var(--text-secondary);
 }
 
-.about__note::before {
+.about__note::before,
+.studio-page__note::before {
   content: '';
   flex: 0 0 1px;
   background: var(--btn-base);
@@ -1160,7 +1152,7 @@ img {
 
 /* The pair shares one height: the filled button carries a matching 1.5px edge. */
 .about__actions .btn--primary {
-  border: 1.5px solid var(--btn-color);
+  --btn-edge: 1.5px;
 }
 
 @media (max-width: 1099px) {
@@ -1253,10 +1245,6 @@ img {
 /* Figma "Pages/Studio Regist Pages": the About hero and step boxes, around the "Form"
    organism. Unlike About, the title keeps Doto on every size, the eyebrow stays 16px,
    and the review section keeps 100px of air on phones. */
-.about--submit {
-  border-bottom: 1px solid var(--btn-base);
-}
-
 .submit__form {
   padding-top: 10px;
   border-top: 1px solid var(--btn-base);
@@ -1703,6 +1691,101 @@ img {
   color: var(--btn-base);
 }
 
+/* Studio page and direct contact fields, below the map listing fields. */
+.studio-editor__group {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.studio-editor__group-title {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 20px 0 0;
+  border-top: 1px solid var(--btn-base);
+  font: 700 24px/32px var(--font-head);
+  color: var(--btn-base);
+}
+
+.studio-editor__group-hint {
+  margin: 0;
+  font: 400 13px/20px var(--font-body);
+  color: var(--text-secondary);
+}
+
+/* Repeating rows (team members, projects). */
+.list-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.list-editor__legend {
+  margin-bottom: 6px;
+  padding: 0;
+}
+
+.register-form .list-editor__legend {
+  color: var(--btn-base);
+}
+
+.list-editor__empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.list-editor__items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list-editor__row {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+
+.list-editor__title {
+  padding: 0 6px;
+  font: 700 12px/18px var(--font-body);
+  text-transform: uppercase;
+  color: var(--btn-base);
+}
+
+/* The checkbox sits level with the inputs beside it. */
+.list-editor__check {
+  align-self: end;
+  min-height: 54px;
+}
+
+.list-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.list-editor__add {
+  align-self: flex-start;
+}
+
 @media (max-width: 727px) {
   .admin__detail {
     padding: 16px;
@@ -1734,37 +1817,62 @@ img {
 }
 
 /* Figma "Progress Check": md checkbox, 14/20 text, ink rule under each row. */
+/* Figma "Progress Check/Regist Studio" (rows are "_Progress Check Base"). */
 .progress-check {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .progress-check__item {
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--btn-base);
+  --progress-color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font: 400 14px/20px var(--font-body);
+  color: var(--progress-color);
 }
 
-.progress-check .checkbox {
+.progress-check__item.is-done {
+  --progress-color: var(--btn-base);
+}
+
+.progress-check__row {
+  display: flex;
+  align-items: center;
   gap: 10px;
-  font-size: 14px;
-  line-height: 20px;
 }
 
-.progress-check .checkbox__label {
-  font-weight: 400;
-}
-
-.progress-check .checkbox__box {
-  border-color: var(--btn-base);
+.progress-check__box {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--progress-color);
   background: var(--neutral-50);
 }
 
-.progress-check__note {
-  color: var(--text-secondary);
+.progress-check__box img {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
+/* The rule down to the next row, centered under the box. */
+.progress-check__item:not(:last-child)::after {
+  content: '';
+  width: 1px;
+  height: 12px;
+  margin-left: 9.5px;
+  background: var(--progress-color);
+}
+
+.progress-check__item.is-done:not(:last-child)::after {
+  height: 42px;
 }
 
 /* Figma "Form" page organism. Sizes follow the layout's width:
@@ -1821,8 +1929,8 @@ img {
 
 /* Request type: sm buttons, outlined, filled when chosen (1px borders keep them level). */
 .choice__btn {
+  --btn-edge: 1px;
   flex: 1;
-  border: 1px solid var(--btn-color);
   background: transparent;
   color: var(--btn-color);
 }
@@ -1954,6 +2062,12 @@ img {
 
   .submission__checklist.is-collapsed .submission__progress {
     display: flex;
+  }
+
+  /* No panel around the list on lg: it sits 12px under its title, flush left. */
+  .submission__progress {
+    margin-top: 12px;
+    padding: 0;
   }
 }
 
@@ -2568,17 +2682,34 @@ button.tag-cat {
   scroll-margin-bottom: 12px;
 }
 
+/* The row itself shows the studio on the map; "Direct" opens its page. */
+.studio-row__card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-tab);
+  background: var(--card);
+  transition: box-shadow 0.12s ease-out, transform 0.12s ease-out;
+}
+
 .studio-row__link {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
   gap: 8px 10px;
   padding: 12px;
-  border: 1.5px solid var(--line);
+  border: 0;
   border-radius: var(--radius-tab);
-  background: var(--card);
-  text-decoration: none;
-  transition: box-shadow 0.12s ease-out, transform 0.12s ease-out;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.studio-row__direct {
+  margin: 12px 12px 0 0;
 }
 
 .studio-row__name {
@@ -2593,7 +2724,7 @@ button.tag-cat {
   gap: 6px 10px;
 }
 
-.studio-row.is-active .studio-row__link {
+.studio-row.is-active .studio-row__card {
   box-shadow: 4px 4px 0 var(--ink);
   transform: translate(-2px, -2px);
 }
@@ -2602,221 +2733,515 @@ button.tag-cat {
   padding: 24px 16px;
 }
 
-/* ---------- Panel: profile ---------- */
+/* ---------- Studio page ---------- */
 
-.profile {
-  padding: 8px 16px 40px;
+/* Figma "Pages/Detailed Studio", on the About grid: desktop >= 1100px (110px gutters),
+   tablet 728-1099px (62px), mobile < 728px (32px). Content is at most 1220px wide.
+   The logo overlaps the cover by half its size. */
+.studio-page {
+  --page-x: 110px;
+  --page-y: 100px;
+  --cover-h: 320px;
+  --logo: 200px;
+  --logo-gap: 80px;
+  background: var(--canvas);
 }
 
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: var(--touch);
-  font-size: 13px;
-  text-decoration: none;
+.studio-page__inner {
+  width: 100%;
+  max-width: calc(1220px + 2 * var(--page-x));
+  margin: 0 auto;
+  padding: 0 var(--page-x);
 }
 
-.back-link:hover {
-  text-decoration: underline;
-}
-
-.profile__header {
-  padding: 14px 16px 16px;
-  border: 1.5px solid var(--line);
-  border-top: 12px solid var(--accent);
-  border-radius: var(--radius-tab);
-  background: var(--card);
-}
-
-.profile__cover {
+.studio-hero__cover {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  max-width: none;
+  height: var(--cover-h);
   object-fit: cover;
-  margin-bottom: 12px;
-  border: 1px solid var(--line-soft);
 }
 
-.profile__band {
+.studio-hero__logo {
+  position: relative;
+  width: var(--logo);
+  height: var(--logo);
+  margin: calc(var(--logo) / -2) 0 0 -1px;
+  background: var(--canvas);
+}
+
+.studio-hero__logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+}
+
+.studio-hero__body {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding-top: var(--logo-gap);
+}
+
+.studio-hero__top {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.studio-hero__badges {
+  display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
-.profile__logo {
-  height: 40px;
-  width: auto;
-}
-
-.profile__name {
-  font-size: 26px;
-  margin: 10px 0 6px;
-}
-
-.profile__lede {
-  font-size: 14px;
-  color: var(--ink-2);
-}
-
-.profile__tags {
+.studio-hero__text {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 12px;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.index-tabs ol {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  scrollbar-width: none;
-  list-style: none;
-  margin: 18px 0 0;
-  padding: 0 4px;
-  border-bottom: 1.5px solid var(--line);
-}
-
-.index-tabs a {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 0 10px;
-  border: 1.5px solid var(--line);
-  border-bottom: 0;
-  border-radius: 6px 6px 0 0;
-  background: var(--paper-2);
-  font-size: 12px;
-  white-space: nowrap;
-  text-decoration: none;
-}
-
-.index-tabs a:hover {
-  background: var(--card);
-}
-
-.index-tabs__num,
-.profile__section-num {
-  font-family: var(--font-accent);
-  font-weight: 700;
-  color: var(--ink-2);
-}
-
-.profile__section {
-  padding: 22px 0 10px;
-  border-bottom: 1px dashed var(--line-soft);
-  scroll-margin-top: 8px;
-}
-
-.profile__section h2 {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  font-size: 18px;
-}
-
-.profile__section p {
-  font-size: 14px;
-}
-
-.people,
-.projects,
-.contact {
-  list-style: none;
+.studio-hero__verified {
   margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
+  font: 400 12px/18px var(--font-body);
+  color: var(--text-secondary);
 }
 
-.people li,
-.projects li {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 2px 12px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--paper-2);
-  font-size: 14px;
-}
-
-.people__name,
-.projects__title {
-  font-weight: 600;
-}
-
-.people__role,
-.projects__meta {
-  color: var(--ink-2);
-  font-size: 13px;
-}
-
-.tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 0;
-}
-
-.tags li {
-  padding: 2px 8px;
-  border: 1px dashed var(--ink-2);
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.facts {
-  display: grid;
-  gap: 10px;
-  margin: 0 0 14px;
-}
-
-.facts dt {
-  font-size: 12px;
-  color: var(--ink-2);
-}
-
-.facts dd {
+.studio-hero__name {
   margin: 0;
-  font-size: 14px;
-}
-
-.contact__link {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: var(--touch);
-  font-size: 14px;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  font: 700 72px/70px var(--font-head);
+  color: var(--btn-base);
   overflow-wrap: anywhere;
 }
 
-.profile__meta {
-  margin-top: 16px;
-  font-size: 12px;
-  color: var(--ink-2);
+.studio-hero__lede {
+  margin: 0;
+  font: 400 20px/30px var(--font-body);
+  color: var(--text-secondary);
 }
 
-.gallery {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  list-style: none;
-  margin: 14px 0 0;
+.studio-hero__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
   padding: 0;
+  list-style: none;
 }
 
-.gallery img {
+/* Figma "Regional Badge" on "_Regional Badge Base". */
+.regional-badge {
+  position: relative;
+  display: flex;
+  min-height: 94px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--btn-base);
+  background: var(--canvas);
+  list-style: none;
+}
+
+.regional-badge--code {
+  align-items: flex-start;
+  padding: 42px 18px 14px;
+  background: var(--btn-base);
+}
+
+.regional-badge--archive {
+  align-items: flex-end;
+  padding: 42px 18px 10px;
+}
+
+.regional-badge--categories {
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+}
+
+.regional-badge__label {
+  position: absolute;
+  top: 11px;
+  left: -1px;
+  padding: 4px 8px;
+  background: var(--btn-base);
+  font: 900 12px/18px var(--font-accent);
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--canvas);
+}
+
+.regional-badge__label--region {
+  background: var(--region);
+}
+
+.regional-badge__value {
+  position: relative;
+  font: 700 30px/38px var(--font-head);
+  white-space: nowrap;
+  color: var(--btn-base);
+}
+
+.regional-badge--code .regional-badge__value {
+  color: var(--canvas);
+}
+
+/* The primary category's icon, barely there, behind the number. */
+.regional-badge__icon {
+  position: absolute;
+  top: calc(50% + 20px);
+  left: calc(50% + 18px);
+  translate: -50% -50%;
+  color: var(--canvas);
+  opacity: 0.05;
+}
+
+.regional-badge__watermark {
+  position: absolute;
+  top: calc(50% - 13px);
+  left: calc(50% + 3px);
+  translate: -50% 0;
+  font: 900 90px/70px var(--font-accent);
+  letter-spacing: -0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--btn-base);
+  opacity: 0.1;
+  pointer-events: none;
+}
+
+.studio-page__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+  padding: var(--page-y) 0;
+}
+
+.studio-page__section {
+  display: flex;
+  flex-direction: column;
+}
+
+.studio-page__boxes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.studio-page__boxes--steps {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.studio-page__boxes > li {
+  display: flex;
+}
+
+.studio-page__boxes .labeled-box {
+  flex: 1;
+}
+
+.studio-page .labeled-box--step {
+  background: var(--canvas);
+}
+
+.studio-page__note:first-child {
+  margin-top: 0;
+}
+
+.studio-page__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.studio-page__portfolio {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.studio-page__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* Figma "Card Scroll Bar": one segment per page, the current one long and dark. */
+.card-pager {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card-pager__grid {
+  display: grid;
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card-pager--team .card-pager__grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.card-pager--portfolio .card-pager__grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.card-pager__grid > li {
+  display: flex;
+}
+
+.card-pager__bar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.card-pager__track {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.card-pager__segment {
+  flex: 1;
+  height: 4px;
+  background: var(--text-secondary);
+}
+
+.card-pager__segment.is-current {
+  flex: 0 0 min(250px, 40%);
+  height: 6px;
+  background: var(--btn-base);
+}
+
+.card-pager__arrows {
+  display: flex;
+  gap: 12px;
+}
+
+.card-pager__arrow:disabled {
+  border-color: var(--text-secondary);
+  color: var(--text-secondary);
+  cursor: default;
+}
+
+/* Figma "Photo Card" */
+.photo-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 639px;
+  border: 1px solid var(--btn-base);
+  background: var(--canvas);
+}
+
+.photo-card__media {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border-bottom: 1px solid var(--btn-base);
+}
+
+.photo-card__media img {
   display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
+  height: 100%;
+  max-width: none;
   object-fit: cover;
-  border: 1px solid var(--line-soft);
+}
+
+.photo-card__tag {
+  position: absolute;
+  bottom: 19px;
+  left: 20px;
+  font-weight: 700;
+}
+
+.photo-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 32px;
+}
+
+.photo-card__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.photo-card__title {
+  margin: 0;
+  font: 600 24px/32px var(--font-head);
+  color: var(--btn-base);
+}
+
+.photo-card__subtitle {
+  margin: 0;
+  font: 400 20px/30px var(--font-body);
+  color: var(--text-secondary);
+}
+
+.photo-card__link {
+  align-self: flex-start;
+}
+
+/* Figma "Contact" */
+.contact-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin: 0;
+  padding: 24px;
+  border: 1px solid var(--btn-base);
+  background: var(--btn-base);
+}
+
+.contact-card__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font: 400 16px/24px var(--font-body);
+}
+
+.contact-card__item--full {
+  grid-column: 1 / -1;
+}
+
+.contact-card dt {
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.contact-card dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--canvas);
+}
+
+.contact-card a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-position: from-font;
+}
+
+.contact-card__line {
+  display: block;
+}
+
+@media (max-width: 1099px) {
+  .studio-page {
+    --page-x: 62px;
+    --logo: 150px;
+    --logo-gap: 75px;
+  }
+
+  /* "Salin tautan" moves above the badges. */
+  .studio-hero__top {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+  }
+
+  .card-pager--team .card-pager__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 727px) {
+  .studio-page {
+    --page-x: 32px;
+    --page-y: 50px;
+    --cover-h: 160px;
+    --logo: 100px;
+    --logo-gap: 50px;
+  }
+
+  .studio-hero {
+    padding-bottom: 50px;
+  }
+
+  .studio-hero__body {
+    gap: 24px;
+  }
+
+  .studio-hero__text + .studio-hero__links {
+    margin-top: 8px;
+  }
+
+  .studio-hero__name {
+    font-size: 48px;
+    line-height: 60px;
+    letter-spacing: -0.02em;
+  }
+
+  .studio-hero__lede {
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .studio-hero .btn {
+    --btn-fs: 12px;
+    --btn-lh: 18px;
+  }
+
+  .studio-hero .btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .studio-page__boxes,
+  .studio-page__boxes--steps,
+  .card-pager--team .card-pager__grid,
+  .card-pager--portfolio .card-pager__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .card-pager--portfolio .photo-card {
+    height: 418px;
+  }
+
+  .card-pager__bar {
+    gap: 12px;
+  }
+
+  .card-pager__track {
+    gap: 6px;
+  }
+
+  .card-pager__segment.is-current {
+    flex-basis: 80px;
+  }
+
+  .contact-card__item--phone {
+    grid-column: 1 / -1;
+  }
+}
+
+/* On phones the profile keeps its large section headings (unlike About). */
+@media (max-width: 600px) {
+  .studio-page .section-heading--lg .section-heading__eyebrow {
+    font-size: 16px;
+    line-height: 24px;
+    letter-spacing: 0.1em;
+  }
+
+  .studio-page .section-heading--lg .section-heading__title {
+    font-size: 48px;
+    line-height: 60px;
+  }
 }
 
 /* ---------- Text pages ---------- */
@@ -2843,6 +3268,124 @@ button.tag-cat {
 
 .page ul:not([class]) > li {
   margin-bottom: 6px;
+}
+
+/* Figma "Pages/Error 404": the "404 Error" organism (lg; sm on phones). The art is laid
+   out on its 400.3×170 lg frame in percentages, so the sm frame is the same at 282.56px. */
+.error-404 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  padding: 100px 32px;
+  background: var(--canvas);
+}
+
+.error-404__art {
+  position: relative;
+  width: 400.3px;
+  max-width: 100%;
+  aspect-ratio: 400.3 / 170;
+}
+
+.error-404__four,
+.error-404__robot {
+  position: absolute;
+}
+
+.error-404__four {
+  top: 30.5%;
+  width: 20.809%;
+}
+
+.error-404__four img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.error-404__four--left {
+  left: 0;
+}
+
+.error-404__four--right {
+  left: 79.191%;
+}
+
+.error-404__robot {
+  top: 0;
+  left: 25.269%;
+  width: 49.963%;
+  height: 100%;
+}
+
+.error-404__ink {
+  fill: var(--btn-base);
+}
+
+.error-404__screen {
+  fill: var(--canvas);
+}
+
+.error-404__text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.error-404__title {
+  margin: 0;
+  font: 700 48px/60px var(--font-head);
+  letter-spacing: -0.96px;
+  color: var(--btn-base);
+  text-align: center;
+}
+
+.error-404__actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* The pair shares one height: the filled button carries a matching 1.5px edge. */
+.error-404__actions .btn--primary {
+  --btn-edge: 1.5px;
+}
+
+@media (max-width: 727px) {
+  .error-404__art {
+    width: 282.56px;
+  }
+
+  .error-404__text,
+  .error-404__actions {
+    align-self: stretch;
+  }
+
+  .error-404__title {
+    font-size: 36px;
+    line-height: 44px;
+    letter-spacing: -0.72px;
+  }
+
+  .error-404__actions {
+    flex-direction: column;
+  }
+
+  /* Size=sm buttons, full width. */
+  .error-404__actions .btn {
+    --btn-pt: 6px;
+    --btn-pb: 6px;
+    --btn-px: 16px;
+    --btn-fs: 12px;
+    --btn-lh: 18px;
+  }
+
+  .error-404__actions .btn svg {
+    width: 14px;
+    height: 14px;
+  }
 }
 
 .notice {
@@ -2930,7 +3473,6 @@ button.tag-cat {
   button.tag,
   button.tag-cat,
   .filter-bar__clear,
-  .index-tabs a,
   .panel-toggle,
   .legend summary {
     min-height: var(--touch);

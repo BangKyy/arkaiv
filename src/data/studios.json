@@ -8,6 +8,8 @@
       "name": "Kertas Lipat Studio",
       "description": "Studio branding dan editorial yang mengerjakan identitas visual untuk usaha lokal dan penerbit independen.",
       "about": "Data contoh. Kertas Lipat Studio adalah entri fiktif untuk menguji tata letak profil: identitas visual, buku, dan publikasi cetak.",
+      "founded": 2011,
+      "type": "Kantor Perusahaan",
       "categories": ["branding", "editorial"],
       "primaryCategory": "branding",
       "specialties": ["identitas visual", "desain buku", "packaging"],
@@ -17,18 +19,23 @@
       "lng": 112.7352,
       "website": "https://example.com/kertas-lipat",
       "instagram": "",
-      "contact": { "email": "", "whatsapp": "" },
+      "contact": { "email": "", "phone": "", "whatsapp": "" },
+      "hours": "Senin - Jumat\n09.00 WIB - 16.00 WIB",
       "accent": "c01",
       "logo": null,
       "cover": null,
       "people": [
         { "name": "Nama Contoh A", "role": "Creative Director" },
-        { "name": "Nama Contoh B", "role": "Graphic Designer" }
+        { "name": "Nama Contoh B", "role": "Graphic Designer" },
+        { "name": "Nama Contoh D", "role": "Copywriter" },
+        { "name": "Nama Contoh E", "role": "Desainer Junior", "internship": true },
+        { "name": "Nama Contoh F", "role": "Ilustrator" }
       ],
       "approach": "Riset singkat bersama klien, eksplorasi sketsa manual, lalu sistem identitas yang bisa dipakai tim klien sendiri.",
+      "process": ["Riset singkat bersama klien", "Eksplorasi sketsa manual", "Sistem identitas visual", "Panduan untuk tim klien"],
       "projects": [
-        { "title": "Identitas Kedai Kopi (contoh)", "year": 2025, "category": "branding" },
-        { "title": "Zine Kampung Kota (contoh)", "year": 2026, "category": "editorial" }
+        { "title": "Identitas Kedai Kopi (contoh)", "year": 2025, "category": "branding", "description": "Logo dan kemasan" },
+        { "title": "Zine Kampung Kota (contoh)", "year": 2026, "category": "editorial", "description": "Zine 32 halaman" }
       ],
       "photos": [],
       "status": "published",

@@ -186,7 +186,7 @@ export default function StudioMap({ focusSlug, padding }) {
     })
   }, [map])
 
-  // FR-08: a profile opened from any entry point (incl. a direct link) centers the map.
+  // FR-08: a studio picked in the list centers the map.
   useEffect(() => {
     if (!map || !focusSlug) return
     const s = bySlug.get(focusSlug)

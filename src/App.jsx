@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Outlet, Route, Routes, useMatch } from 'react-router'
+import { Navigate, Outlet, Route, Routes, useMatch } from 'react-router'
 import { MotionConfig } from 'motion/react'
 import DirectoryProvider from './state/DirectoryProvider'
 import GlobalHeader from './components/GlobalHeader'
@@ -17,10 +17,11 @@ import t from './i18n/id'
 const Admin = lazy(() => import('./pages/Admin'))
 
 /**
- * Information architecture (PRD section 8): four destinations, map first.
- *   /                Explore: map + list + filters + summary card
- *   /studio/:slug    Studio profile, in the Explore layout (stable URL, QR target)
- *   /tentang         About
+ * Information architecture (PRD section 8): four destinations; the homepage introduces
+ * the directory (Figma "Home Page").
+ *   /                Home ("Beranda"): the About page
+ *   /peta            Explore: map + list + filters + summary card
+ *   /studio/:slug    Studio profile, a page of its own (stable URL, QR target)
  *   /daftar          Submit, correct or remove a studio (?koreksi=<slug>, ?hapus=<slug>)
  *   /admin           Review queue for those submissions (admins only, not linked)
  */
@@ -28,11 +29,13 @@ export default function App() {
   return (
     <Routes>
       <Route element={<Shell />}>
-        <Route element={<Explore />}>
+        <Route index element={<About />} />
+        <Route path="peta" element={<Explore />}>
           <Route index element={<StudioListPanel />} />
-          <Route path="studio/:slug" element={<StudioProfile />} />
         </Route>
-        <Route path="tentang" element={<About />} />
+        <Route path="studio/:slug" element={<StudioProfile />} />
+        {/* About lived at /tentang before it became the homepage. */}
+        <Route path="tentang" element={<Navigate to="/" replace />} />
         <Route path="daftar" element={<Submit />} />
         <Route
           path="admin"
@@ -49,9 +52,7 @@ export default function App() {
 }
 
 function Shell() {
-  const homeMatch = useMatch('/')
-  const profileMatch = useMatch('/studio/:slug')
-  const isExplore = Boolean(homeMatch || profileMatch)
+  const isExplore = Boolean(useMatch('/peta'))
 
   return (
     <MotionConfig reducedMotion="user">
@@ -60,7 +61,7 @@ function Shell() {
           <a className="skip-link" href="#main">
             Lewati ke konten
           </a>
-          <GlobalHeader menuDock={isExplore ? 'bar' : 'bottom'} />
+          <GlobalHeader />
           {isSample && <p className="sample-banner">{t.sampleBanner}</p>}
           <main id="main" className={isExplore ? 'main main--explore' : 'main main--page'}>
             <Outlet />

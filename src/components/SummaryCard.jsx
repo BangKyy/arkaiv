@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Link, useLocation } from 'react-router'
+import { Link } from 'react-router'
 import { motion } from 'motion/react'
 import { useDirectory } from '../state/directory'
 import { AreaTag, CategoryChips, CodeTab } from './StudioBits'
@@ -13,7 +13,6 @@ import t from '../i18n/id'
  */
 export default function SummaryCard({ studio }) {
   const { setSelectedSlug } = useDirectory()
-  const { search } = useLocation()
   const cardRef = useRef(null)
 
   const close = (returnFocus) => {
@@ -75,7 +74,7 @@ export default function SummaryCard({ studio }) {
         as={Link}
         className="summary-card__cta"
         icon={ArrowUpRight}
-        to={{ pathname: `/studio/${studio.slug}`, search }}
+        to={`/studio/${studio.slug}`}
         onClick={() => setSelectedSlug(null)}
       >
         {t.card.viewProfile}

@@ -68,8 +68,10 @@ for (const s of published) {
   pages.push(path)
 }
 
+const DESCRIPTION =
+  'Peta direktori studio desain dan agensi kreatif di Surabaya. Temukan studio berdasarkan lokasi dan spesialisasi.'
+
 const staticPages = [
-  { path: '/tentang/', title: 'Tentang', description: 'Tentang Arkaiv, direktori studio desain Surabaya, dan cara studio dipilih.' },
   { path: '/daftar/', title: 'Daftarkan studio', description: 'Daftarkan studio desain Surabaya atau ajukan koreksi data di Arkaiv.' },
 ]
 for (const p of staticPages) {
@@ -77,19 +79,23 @@ for (const p of staticPages) {
   pages.push(p.path)
 }
 
-// Home: share tags plus a crawlable list of every studio link.
-const homeBody = `<h1>${TAGLINE}</h1><ul>${published
+// Map: share tags plus a crawlable list of every studio link.
+const mapBody = `<h1>Jelajahi peta</h1><ul>${published
   .map((s) => `<li><a href="/studio/${esc(s.slug)}">${esc(s.name)}</a></li>`)
   .join('')}</ul>`
-await writeFile(
-  new URL('index.html', dist),
-  render({
-    path: '/',
-    title: '',
-    description: 'Peta direktori studio desain dan agensi kreatif di Surabaya. Temukan studio berdasarkan lokasi dan spesialisasi.',
-    body: homeBody,
-  }),
-)
+await write('/peta/', render({ path: '/peta/', title: 'Jelajahi peta', description: DESCRIPTION, body: mapBody }))
+pages.push('/peta/')
+
+// Home: the About page (Figma "Home Page").
+const home = render({
+  path: '/',
+  title: '',
+  description: DESCRIPTION,
+  body: `<h1>Arsip hidup studio desain di Surabaya.</h1><p>${esc(DESCRIPTION)}</p><p><a href="/peta">Jelajahi peta</a></p>`,
+})
+await writeFile(new URL('index.html', dist), home)
+// Old About address: the app redirects to /, the static copy keeps it from 404ing on hosts without a SPA fallback.
+await write('/tentang/', home)
 
 if (SITE_URL) {
   const urls = ['/', ...pages].map((p) => `  <url><loc>${esc(SITE_URL + p)}</loc></url>`).join('\n')
@@ -100,4 +106,4 @@ if (SITE_URL) {
   await writeFile(new URL('robots.txt', dist), `User-agent: *\nAllow: /\nDisallow: /admin\nSitemap: ${SITE_URL}/sitemap.xml\n`)
 }
 
-console.log(`prerender: ${published.length} studio pages, ${staticPages.length} static pages${SITE_URL ? ', sitemap.xml' : ' (set VITE_SITE_URL for canonical URLs and a sitemap)'}`)
+console.log(`prerender: ${published.length} studio pages, ${staticPages.length + 1} static pages${SITE_URL ? ', sitemap.xml' : ' (set VITE_SITE_URL for canonical URLs and a sitemap)'}`)

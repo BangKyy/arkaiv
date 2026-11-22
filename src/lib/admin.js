@@ -25,6 +25,7 @@ export function friendlyError(err) {
   const msg = err?.message ?? ''
   if (msg.includes('studios_slug_key')) return 'Slug ini sudah dipakai studio lain.'
   if (msg.includes('studios_has_public_link')) return 'Isi website atau Instagram (min salah satu).'
+  if (msg.includes('studios_founded_year_check')) return 'Tahun berdiri harus antara 1900 dan 2100.'
   if (msg.includes('already reviewed')) return 'Pengajuan ini sudah ditinjau admin lain. Muat ulang daftar.'
   if (msg.includes('Choose the studio')) return 'Pilih studio yang dimaksud pengajuan ini.'
   if (msg.includes('Studio not found')) return 'Studio ini sudah tidak ada. Muat ulang daftar.'
@@ -79,7 +80,9 @@ export async function listStudios() {
   const { data, error } = await client
     .from('studios')
     .select(
-      'id, slug, code, name, description, primary_category, address, area, lat, lng, website, instagram, status, source, last_verified, updated_at, studio_categories(category_id)',
+      'id, slug, code, name, description, primary_category, address, area, lat, lng, website, instagram, status, source, last_verified, updated_at, ' +
+        'about, founded_year, studio_type, specialties, approach, process, people, projects, ' +
+        'contact_email, contact_phone, contact_whatsapp, opening_hours, studio_categories(category_id)',
     )
     .order('name')
   if (error) throw error

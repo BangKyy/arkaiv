@@ -27,6 +27,8 @@ create table if not exists public.studios (
   name              text not null,
   description       text not null check (char_length(description) <= 300),
   about             text,
+  founded_year      smallint check (founded_year between 1900 and 2100),
+  studio_type       text,                  -- e.g. 'Kantor Perusahaan', shown as "Jenis"
   primary_category  text not null references public.categories (id),
   specialties       text[] not null default '{}',
   address           text not null,
@@ -37,12 +39,15 @@ create table if not exists public.studios (
   instagram         text,                  -- stored as handle, shown as link
   contact_email     text,                  -- publish only with the studio's consent
   contact_whatsapp  text,                  -- publish only with the studio's consent
+  contact_phone     text,                  -- publish only with the studio's consent
+  opening_hours     text,                  -- free text; each line is shown on its own row
   accent            text check (accent ~ '^c(0[1-9]|1[0-2])$'),
   logo_url          text,
   cover_url         text,
-  people            jsonb not null default '[]',   -- [{ "name", "role" }]
+  people            jsonb not null default '[]',   -- [{ "name", "role", "photo"?, "internship"? }]
   approach          text,
-  projects          jsonb not null default '[]',   -- [{ "title", "year", "category" }]
+  process           jsonb not null default '[]',   -- ["step 1", "step 2", ...] (Pendekatan & Proses)
+  projects          jsonb not null default '[]',   -- [{ "title", "year", "category", "description"?, "url"?, "image"? }]
   photos            jsonb not null default '[]',   -- [{ "src", "alt", "tag": People|Environment|Activity|Process|Work }]
   status            text not null default 'draft' check (status in ('draft', 'published', 'needs_review')),
   source            text not null,                 -- where the record came from (internal)
@@ -139,7 +144,8 @@ create policy "admin read admins" on public.admins
 
 -- Creates (p_id null) or updates one studio and its categories in one transaction.
 -- p_studio holds the editable columns; p_categories lists all categories, primary
--- first (the primary one is skipped in studio_categories). Other columns are left alone.
+-- first (the primary one is skipped in studio_categories). Other columns are left alone,
+-- and so are the studio page fields (about, team, ...) whose keys p_studio leaves out.
 create or replace function public.save_studio(
   p_id         uuid,
   p_studio     jsonb,
@@ -179,6 +185,39 @@ begin
     where id = target;
     if not found then raise exception 'Studio not found'; end if;
   end if;
+
+  -- Studio page fields (Figma "Pages/Detailed Studio"): empty text is stored as null,
+  -- lists that are not JSON arrays as empty ones.
+  update public.studios s set
+    about            = case when p_studio ? 'about' then nullif(btrim(p_studio->>'about'), '') else s.about end,
+    founded_year     = case when p_studio ? 'founded_year'
+                            then nullif(p_studio->>'founded_year', '')::smallint else s.founded_year end,
+    studio_type      = case when p_studio ? 'studio_type'
+                            then nullif(btrim(p_studio->>'studio_type'), '') else s.studio_type end,
+    specialties      = case when p_studio ? 'specialties'
+                            then array(select jsonb_array_elements_text(
+                                   case when jsonb_typeof(p_studio->'specialties') = 'array'
+                                        then p_studio->'specialties' else '[]'::jsonb end))
+                            else s.specialties end,
+    approach         = case when p_studio ? 'approach' then nullif(btrim(p_studio->>'approach'), '') else s.approach end,
+    process          = case when p_studio ? 'process' then
+                         case when jsonb_typeof(p_studio->'process') = 'array' then p_studio->'process' else '[]' end
+                       else s.process end,
+    people           = case when p_studio ? 'people' then
+                         case when jsonb_typeof(p_studio->'people') = 'array' then p_studio->'people' else '[]' end
+                       else s.people end,
+    projects         = case when p_studio ? 'projects' then
+                         case when jsonb_typeof(p_studio->'projects') = 'array' then p_studio->'projects' else '[]' end
+                       else s.projects end,
+    contact_email    = case when p_studio ? 'contact_email'
+                            then nullif(btrim(p_studio->>'contact_email'), '') else s.contact_email end,
+    contact_phone    = case when p_studio ? 'contact_phone'
+                            then nullif(btrim(p_studio->>'contact_phone'), '') else s.contact_phone end,
+    contact_whatsapp = case when p_studio ? 'contact_whatsapp'
+                            then nullif(btrim(p_studio->>'contact_whatsapp'), '') else s.contact_whatsapp end,
+    opening_hours    = case when p_studio ? 'opening_hours'
+                            then nullif(btrim(p_studio->>'opening_hours'), '') else s.opening_hours end
+  where s.id = target;
 
   if p_categories is not null then
     delete from public.studio_categories where studio_id = target;

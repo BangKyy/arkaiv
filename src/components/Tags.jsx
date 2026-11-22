@@ -32,12 +32,14 @@ export function Tag({ as: Component = 'span', variant = 'outlined', label, detai
  * Variant: 'outlined' (category color), 'filled' (category tint, full color on hover),
  * 'outlined-netral' (ink outline) or 'netral' (ink fill, e.g. a selected filter).
  * Type: 'icon' (icon only, keep an accessible name nearby), 'detail' or 'initial'.
+ * Size: 'default' (18px icon) or 'lg' (32px icon, used icon-only on the profile hero).
  */
 export function TagCategory({
   as: Component = 'span',
   category,
   variant = 'outlined',
   type = 'detail',
+  size = 'default',
   removable = false,
   className = '',
   children,
@@ -57,7 +59,7 @@ export function TagCategory({
           {INITIALS[category]}
         </span>
       ) : (
-        <CategoryIcon icon={cat.icon} size={18} />
+        <CategoryIcon icon={cat.icon} size={size === 'lg' ? 32 : 18} />
       )}
       {type === 'icon' ? (
         <span className="visually-hidden">{cat.name}</span>

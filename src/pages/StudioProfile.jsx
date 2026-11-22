@@ -1,52 +1,69 @@
-import { useEffect } from 'react'
-import { Link, useLocation, useParams } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Link, useParams } from 'react-router'
 import { useDirectory } from '../state/directory'
-import { AreaTag, CategoryChips, CodeTab } from '../components/StudioBits'
-import {
-  ArrowLeft,
-  ArrowUpRight,
-  EnvelopeSimple,
-  Globe,
-  InstagramLogo,
-  MapPin,
-  WhatsappLogo,
-} from '../components/icons'
+import Button from '../components/Button'
+import CardPager from '../components/CardPager'
+import PhotoCard from '../components/PhotoCard'
+import SectionHeading from '../components/SectionHeading'
+import { StepBox } from '../components/LabeledBox'
+import { ArchiveBadge, CategoryBadge, CodeBadge } from '../components/RegionalBadge'
+import { Tag, TagCategory } from '../components/Tags'
+import { ArrowLeft, ArrowUpRight, Check, Copy } from '../components/icons'
 import { categoryName, getArea, googleMapsUrl, instagramUrl } from '../lib/catalog'
-import { accentFor } from '../lib/colors'
-import { formatDate, usePageMeta } from '../lib/hooks'
+import { formatDate, useMediaQuery, usePageMeta } from '../lib/hooks'
 import { track } from '../lib/analytics'
+import placeholder from '../assets/profile-placeholder.png'
 import t from '../i18n/id'
 
-// Photo tags from the deck, placed in the profile section they document.
-const PHOTO_SECTION = {
-  Environment: 'about',
-  Activity: 'about',
-  People: 'people',
-  Process: 'approach',
-  Work: 'projects',
+const PHONE_QUERY = '(max-width: 727px)'
+// Photo tags from the deck, in the order of the portfolio filter.
+const PHOTO_TAGS = ['People', 'Environment', 'Activity', 'Process', 'Work']
+
+/** Projects and tagged photos as portfolio cards. Projects count as "Work". */
+function portfolioItems(s) {
+  const projects = (s.projects ?? []).map((p) => ({
+    key: `project-${p.title}-${p.year}`,
+    tag: 'Work',
+    label: p.category ? categoryName(p.category) : 'Work',
+    image: p.image,
+    alt: p.title,
+    title: p.title,
+    subtitle: p.description || (p.year ? String(p.year) : ''),
+    href: p.url,
+  }))
+  const photos = (s.photos ?? []).map((p) => ({
+    key: `photo-${p.src}`,
+    tag: p.tag,
+    label: p.tag,
+    image: p.src,
+    alt: p.alt ?? '',
+    title: p.title || p.alt || p.tag,
+    subtitle: p.caption,
+    href: p.url,
+  }))
+  return [...projects, ...photos]
 }
 
 /** The book's six-part order (PRD section 8). Empty parts are left out entirely. */
-function buildSections(s) {
-  const photos = (id) => (s.photos ?? []).filter((p) => PHOTO_SECTION[p.tag] === id)
+function buildSections(s, portfolio) {
   const has = {
-    // The one-line description is already in the header, so About needs its own text or photos.
-    about: Boolean(s.about) || photos('about').length > 0,
-    people: s.people?.length > 0 || photos('people').length > 0,
+    about: true,
+    people: s.people?.length > 0,
     specialty: s.categories.length > 0,
-    approach: Boolean(s.approach) || photos('approach').length > 0,
-    projects: s.projects?.length > 0 || photos('projects').length > 0,
+    approach: s.process?.length > 0 || Boolean(s.approach),
+    projects: portfolio.length > 0,
     contact: true,
   }
-  return Object.keys(t.profile.sections)
-    .filter((id) => has[id])
-    .map((id) => ({ id, label: t.profile.sections[id], photos: photos(id) }))
+  return Object.keys(t.profile.sections).filter((id) => has[id])
 }
 
+/**
+ * Figma "Pages/Detailed Studio": a standalone page per studio (stable URL, QR target).
+ * Desktop >= 1100px (110px gutters), tablet 728-1099px (62px), mobile < 728px (32px).
+ */
 export default function StudioProfile() {
   const { slug } = useParams()
   const { bySlug } = useDirectory()
-  const { search } = useLocation()
   const studio = bySlug.get(slug)
 
   usePageMeta(studio?.name ?? t.profile.notFound, studio?.description)
@@ -55,128 +72,172 @@ export default function StudioProfile() {
     if (studio) track('profile_view', { studio: studio.slug })
   }, [studio])
 
-  const back = (
-    <Link className="back-link" to={{ pathname: '/', search }}>
-      <ArrowLeft size={16} weight="bold" aria-hidden="true" />
-      {t.profile.back}
-    </Link>
-  )
-
   if (!studio) {
     return (
-      <section className="panel-section">
-        {back}
-        <h1 tabIndex={-1}>{t.profile.notFound}</h1>
+      <article className="page">
+        <SectionHeading as="h1" eyebrow="404">
+          {t.profile.notFound}
+        </SectionHeading>
         <p>{t.profile.notFoundBody}</p>
-      </section>
+        <Button as={Link} to="/peta" variant="outlined" size="lg" icon={ArrowLeft} iconPosition="left">
+          {t.profile.back}
+        </Button>
+      </article>
     )
   }
 
-  const sections = buildSections(studio)
-  const { bg, fg } = accentFor(studio.accent)
+  const portfolio = portfolioItems(studio)
+  const sections = buildSections(studio, portfolio)
 
   return (
-    <article className="profile" aria-labelledby="profile-name">
-      {back}
-
-      <header className="profile__header" style={{ '--accent': bg, '--accent-fg': fg }}>
-        {studio.cover && (
-          <img className="profile__cover" src={studio.cover} alt="" loading="lazy" />
-        )}
-        <div className="profile__band">
-          <CodeTab studio={studio} />
-          {studio.logo && (
-            <img className="profile__logo" src={studio.logo} alt={`Logo ${studio.name}`} />
-          )}
-        </div>
-        <h1 id="profile-name" className="profile__name" tabIndex={-1}>
-          {studio.name}
-        </h1>
-        <p className="profile__lede">{studio.description}</p>
-        <div className="profile__tags">
-          <CategoryChips ids={studio.categories} primary={studio.primaryCategory} />
-          <AreaTag id={studio.area} />
-        </div>
-      </header>
-
-      <nav className="index-tabs" aria-label={t.profile.sectionsNav}>
-        <ol>
-          {sections.map((sec, i) => (
-            <li key={sec.id}>
-              <a
-                href={`#sec-${sec.id}`}
-                onClick={(e) => {
-                  e.preventDefault()
-                  const el = document.getElementById(`sec-${sec.id}`)
-                  el?.scrollIntoView({ block: 'start' })
-                  el?.querySelector('h2')?.focus({ preventScroll: true })
-                }}
-              >
-                <span className="index-tabs__num">{String(i + 1).padStart(2, '0')}</span>
-                {sec.label}
-              </a>
-            </li>
-          ))}
-        </ol>
-      </nav>
-
-      {sections.map((sec, i) => (
-        <section key={sec.id} id={`sec-${sec.id}`} className="profile__section">
-          <h2 tabIndex={-1}>
-            <span className="profile__section-num">{String(i + 1).padStart(2, '0')}</span>
-            {sec.label}
-          </h2>
-          <SectionBody id={sec.id} studio={studio} />
-          {sec.photos.length > 0 && <Gallery photos={sec.photos} />}
-        </section>
-      ))}
+    <article className="studio-page" aria-labelledby="profile-name">
+      <Hero studio={studio} />
+      <div className="studio-page__sections">
+        {sections.map((id, i) => (
+          <section key={id} className="studio-page__inner studio-page__section" aria-labelledby={`sec-${id}`}>
+            <SectionHeading eyebrow={t.profile.sectionEyebrow(i + 1)} id={`sec-${id}`}>
+              {t.profile.sections[id]}
+            </SectionHeading>
+            <SectionBody id={id} studio={studio} portfolio={portfolio} />
+          </section>
+        ))}
+      </div>
     </article>
   )
 }
 
-function SectionBody({ id, studio }) {
-  switch (id) {
-    case 'about':
-      return studio.about ? <p>{studio.about}</p> : null
-    case 'people':
-      return studio.people?.length ? (
-        <ul className="people">
-          {studio.people.map((p) => (
-            <li key={`${p.name}-${p.role}`}>
-              <span className="people__name">{p.name}</span>
-              {p.role && <span className="people__role">{p.role}</span>}
+function Hero({ studio }) {
+  const outbound = (type) => () => track('outbound_click', { studio: studio.slug, type })
+  const links = [
+    studio.contact?.email && { type: 'email', label: t.profile.email, href: `mailto:${studio.contact.email}` },
+    studio.instagram && { type: 'instagram', label: t.profile.instagram, href: instagramUrl(studio.instagram) },
+    studio.website && { type: 'website', label: t.profile.website, href: studio.website },
+    { type: 'google_maps', label: t.profile.googleMaps, href: googleMapsUrl(studio) },
+  ].filter(Boolean)
+
+  return (
+    <header className="studio-hero">
+      <div className="studio-hero__media">
+        <img className="studio-hero__cover" src={studio.cover || placeholder} alt="" />
+        <div className="studio-page__inner">
+          <div className="studio-hero__logo">
+            <img src={studio.logo || placeholder} alt={studio.logo ? `Logo ${studio.name}` : ''} />
+          </div>
+        </div>
+      </div>
+
+      <div className="studio-page__inner studio-hero__body">
+        <div className="studio-hero__top">
+          <div className="studio-hero__badges">
+            <CodeBadge code={studio.code} area={studio.area} primaryCategory={studio.primaryCategory} />
+            <ArchiveBadge label={t.profile.archive} years={t.profile.archiveYears} />
+            <CategoryBadge ids={studio.categories} />
+          </div>
+          <CopyLinkButton slug={studio.slug} />
+        </div>
+
+        <div className="studio-hero__text">
+          {studio.lastVerified && (
+            <p className="studio-hero__verified">{t.profile.lastVerified(formatDate(studio.lastVerified))}</p>
+          )}
+          <h1 id="profile-name" className="studio-hero__name" tabIndex={-1}>
+            {studio.name}
+          </h1>
+          <p className="studio-hero__lede">{studio.description}</p>
+        </div>
+
+        <ul className="studio-hero__links">
+          {links.map((l) => (
+            <li key={l.type}>
+              <Button
+                as="a"
+                href={l.href}
+                {...(l.type === 'email' ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
+                variant="outlined"
+                size="xl"
+                icon={ArrowUpRight}
+                onClick={outbound(l.type)}
+              >
+                {l.label}
+                {l.type !== 'email' && <span className="visually-hidden"> {t.profile.newTab}</span>}
+              </Button>
             </li>
           ))}
         </ul>
-      ) : null
+      </div>
+    </header>
+  )
+}
+
+function CopyLinkButton({ slug }) {
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (!copied) return undefined
+    const id = setTimeout(() => setCopied(false), 2000)
+    return () => clearTimeout(id)
+  }, [copied])
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/studio/${slug}`)
+      setCopied(true)
+      track('copy_link', { studio: slug })
+    } catch {
+      // Clipboard can be blocked (permissions, insecure origin); the address bar still works.
+    }
+  }
+
+  return (
+    <Button variant="outlined" size="xl" icon={copied ? Check : Copy} className="studio-hero__copy" onClick={copy}>
+      <span aria-live="polite">{copied ? t.profile.copied : t.profile.copyLink}</span>
+    </Button>
+  )
+}
+
+function SectionBody({ id, studio, portfolio }) {
+  switch (id) {
+    case 'about':
+      return <About studio={studio} />
+    case 'people':
+      return <Team people={studio.people} />
     case 'specialty':
       return (
         <>
-          <CategoryChips ids={studio.categories} primary={studio.primaryCategory} />
-          {studio.specialties?.length > 0 && (
-            <ul className="tags">
-              {studio.specialties.map((tag) => (
-                <li key={tag}>{tag}</li>
-              ))}
-            </ul>
-          )}
+          <ul className="studio-page__tags">
+            {studio.categories.map((c) => (
+              <li key={c}>
+                <TagCategory category={c} variant="netral" />
+              </li>
+            ))}
+            {studio.specialties?.map((tag) => (
+              <li key={tag}>
+                <Tag label={tag} />
+              </li>
+            ))}
+          </ul>
+          <p className="studio-page__note">{t.profile.specialtyNote}</p>
         </>
       )
     case 'approach':
-      return studio.approach ? <p>{studio.approach}</p> : null
+      return (
+        <>
+          {studio.process?.length > 0 && (
+            <ol className="studio-page__boxes studio-page__boxes--steps">
+              {studio.process.map((step, i) => (
+                <li key={step}>
+                  <StepBox label={t.profile.step(i + 1)} watermark={String(i + 1)}>
+                    {step}
+                  </StepBox>
+                </li>
+              ))}
+            </ol>
+          )}
+          {studio.approach && <p className="studio-page__note">{studio.approach}</p>}
+        </>
+      )
     case 'projects':
-      return studio.projects?.length ? (
-        <ul className="projects">
-          {studio.projects.map((p) => (
-            <li key={`${p.title}-${p.year}`}>
-              <span className="projects__title">{p.title}</span>
-              <span className="projects__meta">
-                {[p.year, p.category && categoryName(p.category)].filter(Boolean).join(' · ')}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : null
+      return <Portfolio items={portfolio} studio={studio} />
     case 'contact':
       return <Contact studio={studio} />
     default:
@@ -184,116 +245,181 @@ function SectionBody({ id, studio }) {
   }
 }
 
-function External({ href, kind, studio, icon, children }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="contact__link"
-      onClick={() => track('outbound_click', { studio: studio.slug, type: kind })}
-    >
-      {icon}
-      <span>{children}</span>
-      <ArrowUpRight size={14} weight="bold" aria-hidden="true" />
-      <span className="visually-hidden"> {t.profile.newTab}</span>
-    </a>
-  )
-}
-
-function Contact({ studio }) {
-  const { search } = useLocation()
+function About({ studio }) {
   const area = getArea(studio.area)
-  const iconProps = { size: 18, weight: 'bold', 'aria-hidden': true }
-  const wa = studio.contact?.whatsapp?.replace(/\D/g, '')
+  const facts = [
+    studio.founded && { label: t.profile.founded, value: studio.founded },
+    studio.type && { label: t.profile.type, value: studio.type },
+    area && { label: t.profile.area, value: area.name },
+  ].filter(Boolean)
 
   return (
     <>
-      <dl className="facts">
-        <div>
-          <dt>{t.profile.address}</dt>
-          <dd>{studio.address}</dd>
-        </div>
-        {area && (
-          <div>
-            <dt>{t.profile.area}</dt>
-            <dd>
-              {area.name} ({area.code})
-            </dd>
-          </div>
-        )}
-      </dl>
-
-      <ul className="contact">
-        <li>
-          <External href={googleMapsUrl(studio)} kind="google_maps" studio={studio} icon={<MapPin {...iconProps} />}>
-            {t.profile.openMaps}
-          </External>
-        </li>
-        {studio.website && (
-          <li>
-            <External href={studio.website} kind="website" studio={studio} icon={<Globe {...iconProps} />}>
-              {studio.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
-            </External>
+      <ul className="studio-page__boxes">
+        {facts.map((f, i) => (
+          <li key={f.label}>
+            <StepBox label={f.label} watermark={String(i + 1)}>
+              {f.value}
+            </StepBox>
           </li>
-        )}
-        {studio.instagram && (
-          <li>
-            <External
-              href={instagramUrl(studio.instagram)}
-              kind="instagram"
-              studio={studio}
-              icon={<InstagramLogo {...iconProps} />}
-            >
-              @{studio.instagram.replace(/^@/, '')}
-            </External>
-          </li>
-        )}
-        {/* Direct contact is published only with the studio's consent (PRD section 11). */}
-        {studio.contact?.email && (
-          <li>
-            <a className="contact__link" href={`mailto:${studio.contact.email}`}>
-              <EnvelopeSimple {...iconProps} />
-              <span>{studio.contact.email}</span>
-            </a>
-          </li>
-        )}
-        {wa && (
-          <li>
-            <External href={`https://wa.me/${wa}`} kind="whatsapp" studio={studio} icon={<WhatsappLogo {...iconProps} />}>
-              {t.profile.whatsapp}
-            </External>
-          </li>
-        )}
+        ))}
       </ul>
-
-      <p className="profile__meta">
-        {studio.lastVerified && (
-          <>
-            {t.profile.lastVerified}: {formatDate(studio.lastVerified)}
-            <br />
-          </>
-        )}
-        <Link to={{ pathname: '/daftar', search: `?koreksi=${studio.slug}` }} state={{ from: search }}>
-          {t.profile.report}
-        </Link>
-        <br />
-        <Link to={{ pathname: '/daftar', search: `?hapus=${studio.slug}` }} state={{ from: search }}>
-          {t.profile.removal}
-        </Link>
-      </p>
+      <p className="studio-page__note">{studio.about || studio.description}</p>
     </>
   )
 }
 
-function Gallery({ photos }) {
+function Team({ people }) {
+  const isPhone = useMediaQuery(PHONE_QUERY)
   return (
-    <ul className="gallery">
-      {photos.map((p) => (
-        <li key={p.src}>
-          <img src={p.src} alt={p.alt ?? ''} loading="lazy" />
-        </li>
-      ))}
-    </ul>
+    <CardPager
+      className="card-pager--team"
+      label={t.profile.team}
+      items={people}
+      pageSize={isPhone ? 1 : 4}
+      getKey={(p) => `${p.name}-${p.role}`}
+      renderItem={(p) => (
+        <PhotoCard
+          image={p.photo}
+          alt={p.name}
+          title={p.name}
+          subtitle={p.role}
+          tag={p.internship ? t.profile.internship : null}
+        />
+      )}
+    />
+  )
+}
+
+function Portfolio({ items, studio }) {
+  const isPhone = useMediaQuery(PHONE_QUERY)
+  const [filter, setFilter] = useState('all')
+  const tags = PHOTO_TAGS.filter((tag) => items.some((item) => item.tag === tag))
+  const shown = filter === 'all' ? items : items.filter((item) => item.tag === filter)
+
+  return (
+    <div className="studio-page__portfolio">
+      {tags.length > 1 && (
+        <div className="studio-page__filters" role="group" aria-label="Filter portofolio">
+          {['all', ...tags].map((tag) => (
+            <Tag
+              key={tag}
+              as="button"
+              label={tag === 'all' ? t.profile.all : tag}
+              aria-pressed={filter === tag}
+              onClick={() => setFilter(tag)}
+            />
+          ))}
+        </div>
+      )}
+      <CardPager
+        key={filter}
+        className="card-pager--portfolio"
+        label={t.profile.portfolio}
+        items={shown}
+        pageSize={isPhone ? 3 : 4}
+        getKey={(item) => item.key}
+        renderItem={(item) => (
+          <PhotoCard
+            image={item.image}
+            alt={item.alt}
+            tag={item.label}
+            title={item.title}
+            subtitle={item.subtitle}
+            href={item.href}
+            linkLabel={t.profile.seeMore}
+            onLinkClick={() => track('outbound_click', { studio: studio.slug, type: 'portfolio' })}
+          />
+        )}
+      />
+    </div>
+  )
+}
+
+/** `span`: 'full' takes the whole row, 'phone' only on phones (Figma Contact sm). */
+function ContactItem({ label, href, external = false, span, onClick, children }) {
+  return (
+    <div className={`contact-card__item ${span ? `contact-card__item--${span}` : ''}`}>
+      <dt>{label}</dt>
+      <dd>
+        {href ? (
+          <a href={href} onClick={onClick} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+            {children}
+            {external && <span className="visually-hidden"> {t.profile.newTab}</span>}
+          </a>
+        ) : (
+          children
+        )}
+      </dd>
+    </div>
+  )
+}
+
+function Contact({ studio }) {
+  const outbound = (type) => () => track('outbound_click', { studio: studio.slug, type })
+  const area = getArea(studio.area)
+  const handle = studio.instagram?.replace(/^@/, '')
+  // Direct contact is published only with the studio's consent (PRD section 11).
+  const { email, phone, whatsapp } = studio.contact ?? {}
+  const wa = whatsapp?.replace(/\D/g, '')
+
+  return (
+    <dl className="contact-card">
+      {studio.website && (
+        <ContactItem
+          label={t.profile.website}
+          href={studio.website}
+          external
+          span={handle ? undefined : 'full'}
+          onClick={outbound('website')}
+        >
+          {studio.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}
+        </ContactItem>
+      )}
+      {handle && (
+        <ContactItem
+          label={t.profile.instagram}
+          href={instagramUrl(handle)}
+          external
+          span={studio.website ? undefined : 'full'}
+          onClick={outbound('instagram')}
+        >
+          @{handle}
+        </ContactItem>
+      )}
+      {email && (
+        <ContactItem label={t.profile.email} href={`mailto:${email}`} span="phone">
+          {email}
+        </ContactItem>
+      )}
+      {phone && (
+        <ContactItem label={t.profile.phone} href={`tel:${phone.replace(/[^\d+]/g, '')}`} span="phone">
+          {phone}
+        </ContactItem>
+      )}
+      {wa && (
+        <ContactItem label={t.profile.whatsapp} href={`https://wa.me/${wa}`} external span="phone" onClick={outbound('whatsapp')}>
+          {whatsapp}
+        </ContactItem>
+      )}
+      <ContactItem
+        label={t.profile.address}
+        href={googleMapsUrl(studio)}
+        external
+        span="full"
+        onClick={outbound('google_maps')}
+      >
+        {[studio.address, area?.name].filter(Boolean).join(', ')}
+      </ContactItem>
+      {studio.hours && (
+        <ContactItem label={t.profile.hours} span="full">
+          {studio.hours.split('\n').map((line) => (
+            <span key={line} className="contact-card__line">
+              {line}
+            </span>
+          ))}
+        </ContactItem>
+      )}
+    </dl>
   )
 }

@@ -1,5 +1,5 @@
-import { Suspense, lazy, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { useLocation, useMatch, useOutlet } from 'react-router'
+import { Suspense, lazy, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useOutlet } from 'react-router'
 import { AnimatePresence, motion } from 'motion/react'
 import { useDirectory } from '../state/directory'
 import CategoryFilter from '../components/CategoryFilter'
@@ -17,22 +17,18 @@ import t from '../i18n/id'
 const StudioMap = lazy(() => import('../components/StudioMap'))
 
 /**
- * Explore (home) and Studio profile share this layout: the map stays mounted
- * while the side panel (desktop) or bottom sheet (mobile) switches between
- * the list and a profile. Map-first: nothing sits in front of the map except
- * the slim header and the filters (PRD section 9).
+ * Explore (home): the map with the studio list in a side panel (desktop) or bottom
+ * sheet (mobile). Map-first: nothing sits in front of the map except the slim header
+ * and the filters (PRD section 9). Profiles are pages of their own (/studio/:slug).
  */
 export default function Explore() {
-  const { bySlug, selectedSlug } = useDirectory()
+  const { bySlug, selectedSlug, setSelectedSlug } = useDirectory()
   const isMobile = useMediaQuery(MOBILE_QUERY)
-  const profileMatch = useMatch('/studio/:slug')
-  const focusSlug = profileMatch?.params.slug ?? null
-  const { pathname } = useLocation()
-  const outlet = useOutlet()
 
   const [panelOpen, setPanelOpen] = useState(true)
-  // A profile opened by direct link or QR code starts with the sheet half open.
-  const [snap, setSnap] = useState(() => (focusSlug ? 'half' : 'peek'))
+  const [snap, setSnap] = useState('peek')
+  // The studio the map last flew to after a pick in the list.
+  const [focusSlug, setFocusSlug] = useState(null)
   const bodyRef = useRef(null)
   const panelRef = useRef(null)
   const [areaHeight, setAreaHeight] = useState(600)
@@ -45,30 +41,14 @@ export default function Explore() {
     return () => ro.disconnect()
   }, [])
 
-  // Opening a profile shows the panel and raises the sheet (adjusted during render,
-  // React's recommended pattern for state that follows a changing value).
-  const [prevFocus, setPrevFocus] = useState(focusSlug)
-  if (focusSlug !== prevFocus) {
-    setPrevFocus(focusSlug)
-    if (focusSlug) {
-      setPanelOpen(true)
-      if (snap !== 'full') setSnap('half')
-    }
+  // A pick in the list selects the studio and centers the map on it; on phones the
+  // sheet drops so the pin and its summary card are in view.
+  const showOnMap = (slug) => {
+    setSelectedSlug(slug)
+    setFocusSlug(slug)
+    if (isMobile) setSnap('peek')
   }
-
-  // After navigating between list and profile, start at the top and move focus
-  // to the new heading so keyboard and screen-reader users land in the right place.
-  const firstRender = useRef(true)
-  useEffect(() => {
-    const panel = panelRef.current
-    if (!panel) return
-    panel.scrollTop = 0
-    if (firstRender.current) {
-      firstRender.current = false
-      return
-    }
-    panel.querySelector('h1')?.focus({ preventScroll: true })
-  }, [pathname])
+  const outlet = useOutlet({ showOnMap })
 
   const sheetVisible = isMobile ? snapHeights(areaHeight)[snap] : 0
   const mapPadding = useMemo(
@@ -80,10 +60,11 @@ export default function Explore() {
   )
 
   const selected = selectedSlug ? bySlug.get(selectedSlug) : null
+  // Closing the card or picking another pin ends the list's focus request.
+  const mapFocus = focusSlug === selectedSlug ? focusSlug : null
 
   const panelContent = (
     <motion.div
-      key={pathname}
       className="panel__inner"
       initial={{ opacity: 0, x: isMobile ? 0 : -8 }}
       animate={{ opacity: 1, x: 0 }}
@@ -112,7 +93,7 @@ export default function Explore() {
         <div className="explore__map">
           <MapBoundary>
             <Suspense fallback={<div className="map-wrap map" aria-busy="true" />}>
-              <StudioMap focusSlug={focusSlug} padding={mapPadding} />
+              <StudioMap focusSlug={mapFocus} padding={mapPadding} />
             </Suspense>
           </MapBoundary>
           {!isMobile && (

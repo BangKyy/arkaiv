@@ -10,7 +10,8 @@ import bookImage from '../assets/book-placeholder.png'
 // Layout and copy follow the Figma "Tentang Direktori" screens (desktop, tablet, mobile).
 // Inclusion rules mirror PRD section 11 (Proposed).
 export default function About() {
-  usePageMeta('Tentang', 'Tentang Arkaiv, direktori studio desain Surabaya, dan cara studio dipilih.')
+  // The homepage, so it keeps the site's own title and description.
+  usePageMeta(null)
 
   return (
     <article className="about">
@@ -25,7 +26,7 @@ export default function About() {
             spesialisasi, supaya mahasiswa desain dan komunitas kreatif bisa menemukan referensi
             profesional di kota sendiri.
           </p>
-          <Button as={Link} to="/" size="xl" icon={ArrowUpRight} className="about__cta">
+          <Button as={Link} to="/peta" size="xl" icon={ArrowUpRight} className="about__cta">
             Jelajahi peta virtual
           </Button>
         </div>

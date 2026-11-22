@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Button from './Button'
 import { TextArea, TextField } from './Fields'
 import { ArrowUpRight, EnvelopeSimple } from './icons'
@@ -8,19 +8,31 @@ const REASON_MAX = 300
 /**
  * Removal request, styled like RegisterForm. Validates on submit and hands the values
  * to `onSubmit({ name, role, email, reason })`; sending them anywhere is up to the caller.
+ * `onValuesChange` gets the same values while the form is filled in.
  */
-export default function RemovalForm({ onSubmit, submitting = false, studioName = '' }) {
+export default function RemovalForm({ onSubmit, onValuesChange, submitting = false, studioName = '' }) {
+  const formRef = useRef(null)
   const [errors, setErrors] = useState({})
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const form = new FormData(e.currentTarget)
-    const values = {
+  const readValues = (formEl) => {
+    const form = new FormData(formEl)
+    return {
       name: form.get('name')?.trim(),
       role: form.get('role')?.trim(),
       email: form.get('email')?.trim(),
       reason: form.get('reason')?.trim(),
     }
+  }
+  const report = () => onValuesChange?.(readValues(formRef.current))
+
+  // The studio name can arrive prefilled; count it from the start.
+  useEffect(() => {
+    report()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    const values = readValues(e.currentTarget)
     const next = {}
     if (!values.name) next.name = 'Nama studio wajib diisi.'
     if (!values.role) next.role = 'Isi hubungan Anda dengan studio.'
@@ -34,7 +46,7 @@ export default function RemovalForm({ onSubmit, submitting = false, studioName =
   }
 
   return (
-    <form className="register-form" noValidate onSubmit={handleSubmit}>
+    <form ref={formRef} className="register-form" noValidate onSubmit={handleSubmit} onInput={report}>
       <TextField
         name="name"
         label="Nama studio yang ingin dihapus*"

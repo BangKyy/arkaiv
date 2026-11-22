@@ -2,8 +2,8 @@
 // Wire to a cookie-less provider (e.g. Plausible or Umami) by defining window.plausible
 // or window.umami; until then events are only logged in development.
 //
-// Events: map_loaded, pin_click, list_click, filter_applied, profile_view,
-//         outbound_click, submit_click  (search_query arrives in V1.1)
+// Events: map_loaded, pin_click, list_click, direct_click, filter_applied, profile_view,
+//         outbound_click, copy_link, submit_click  (search_query arrives in V1.1)
 export function track(event, props = {}) {
   try {
     if (typeof window.plausible === 'function') window.plausible(event, { props })

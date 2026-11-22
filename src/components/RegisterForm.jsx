@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Button from './Button'
 import RegionSelect from './RegionSelect'
 import { TagCategory } from './Tags'
@@ -19,9 +19,11 @@ const Optional = ({ children }) => (
  * "Form" (studio registration) from the Figma library: two columns on wide screens
  * (Size=lg), one column on phones (Size=sm). Validates on submit and hands the values
  * to `onSubmit({ name, address, area, email, website, instagram, categories, description })`;
- * sending them anywhere is up to the caller.
+ * sending them anywhere is up to the caller. `onValuesChange` gets the same values while
+ * the form is filled in (for the progress checklist).
  */
-export default function RegisterForm({ onSubmit, submitting = false }) {
+export default function RegisterForm({ onSubmit, onValuesChange, submitting = false }) {
+  const formRef = useRef(null)
   const [area, setArea] = useState('')
   const [picked, setPicked] = useState([])
   const [errors, setErrors] = useState({})
@@ -29,10 +31,9 @@ export default function RegisterForm({ onSubmit, submitting = false }) {
   const togglePick = (id) =>
     setPicked((p) => (p.includes(id) ? p.filter((c) => c !== id) : p.length < MAX_CATEGORIES ? [...p, id] : p))
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const form = new FormData(e.currentTarget)
-    const values = {
+  const readValues = (formEl) => {
+    const form = new FormData(formEl)
+    return {
       name: form.get('name')?.trim(),
       address: form.get('address')?.trim(),
       area,
@@ -42,6 +43,17 @@ export default function RegisterForm({ onSubmit, submitting = false }) {
       categories: picked,
       description: form.get('description')?.trim(),
     }
+  }
+  const report = () => onValuesChange?.(readValues(formRef.current))
+
+  // Region and categories are not inputs, so their changes are reported from here.
+  useEffect(() => {
+    report()
+  }, [area, picked]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    const values = readValues(e.currentTarget)
     const next = {}
     if (!values.name) next.name = 'Nama studio wajib diisi.'
     if (!values.address) next.address = 'Alamat wajib diisi.'
@@ -58,7 +70,7 @@ export default function RegisterForm({ onSubmit, submitting = false }) {
   }
 
   return (
-    <form className="register-form" noValidate onSubmit={handleSubmit}>
+    <form ref={formRef} className="register-form" noValidate onSubmit={handleSubmit} onInput={report}>
       <TextField name="name" label="Nama resmi studio*" placeholder="Nama studio" error={errors.name} autoComplete="organization" />
       <TextField name="address" label="Alamat jalan*" placeholder="Jl. ..." error={errors.address} autoComplete="street-address" />
       <div className="register-form__row">

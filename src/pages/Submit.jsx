@@ -26,22 +26,28 @@ const KINDS = [
 ]
 
 // "Progress Check/Regist Studio": what to have ready before filling in the form.
+// "Beberapa hal yang harus diselesaikan!": progress only. A row ticks itself once its
+// fields in the form are filled (`done` reads the form's current values); rows without
+// `done` have no field in the form and stay open.
+const hasLinks = (v) => Boolean(v.website || v.instagram)
 const CHECKLISTS = {
   new: [
-    { id: 'name', label: 'Nama resmi studio' },
-    { id: 'address', label: 'Alamat jalan dan wilayah' },
-    { id: 'links', label: 'Website atau Instagram', note: '(min salah satu)' },
-    { id: 'categories', label: 'Satu kategori utama, maksimal dua tambahan' },
+    { id: 'name', label: 'Nama resmi studio', done: (v) => Boolean(v.name) },
+    { id: 'address', label: 'Alamat jalan dan wilayah', done: (v) => Boolean(v.address && v.area) },
+    { id: 'links', label: 'Website atau Instagram', note: '(min salah satu)', done: hasLinks },
+    { id: 'categories', label: 'Satu kategori utama, maksimal dua tambahan', done: (v) => v.categories?.length > 0 },
     { id: 'logo', label: 'Logo yang boleh dipakai di web', note: '(opsional)' },
   ],
+  // Corrections use the registration form: the studio's name plus the corrected data.
   correction: [
-    { id: 'studio', label: 'Nama studio yang ingin dikoreksi' },
-    { id: 'what', label: 'Bagian data yang perlu diperbaiki' },
-    { id: 'fix', label: 'Data yang benar', note: '(sertakan sumbernya bila ada)' },
+    { id: 'studio', label: 'Nama studio yang ingin dikoreksi', done: (v) => Boolean(v.name) },
+    { id: 'address', label: 'Alamat jalan dan wilayah yang benar', done: (v) => Boolean(v.address && v.area) },
+    { id: 'links', label: 'Website atau Instagram', note: '(min salah satu)', done: hasLinks },
+    { id: 'categories', label: 'Kategori yang sesuai karya studio', done: (v) => v.categories?.length > 0 },
   ],
   removal: [
-    { id: 'studio', label: 'Nama studio yang ingin dihapus' },
-    { id: 'role', label: 'Hubungan Anda dengan studio', note: '(pemilik atau perwakilan)' },
+    { id: 'studio', label: 'Nama studio yang ingin dihapus', done: (v) => Boolean(v.name) },
+    { id: 'role', label: 'Hubungan Anda dengan studio', note: '(pemilik atau perwakilan)', done: (v) => Boolean(v.role) },
   ],
 }
 
@@ -80,7 +86,9 @@ export default function Submit() {
   const [params, setParams] = useSearchParams()
   const { bySlug } = useDirectory()
   const [status, setStatus] = useState('idle') // idle | sending | sent | error
+  const [values, setValues] = useState({}) // the form's current values, for the checklist
   const kind = readKind(params)
+  const checklist = CHECKLISTS[kind].map(({ done, ...item }) => ({ ...item, done: Boolean(done?.(values)) }))
   const studio = STUDIO_PARAM[kind] ? bySlug.get(params.get(STUDIO_PARAM[kind]) ?? '') : undefined
   const copy = COPY[kind]
   const title = studio ? `${kind === 'removal' ? 'Ajukan penghapusan' : 'Ajukan koreksi'} untuk ${studio.name}` : copy.title
@@ -130,7 +138,7 @@ export default function Submit() {
 
       <div className="about__inner">
         <div className="submit__form">
-          <SubmissionLayout kinds={KINDS} kind={kind} onKindChange={setKind} checklist={CHECKLISTS[kind]} title={title}>
+          <SubmissionLayout kinds={KINDS} kind={kind} onKindChange={setKind} checklist={checklist} title={title}>
             {copy.lede && <p className="page__lede">{copy.lede}</p>}
             {status === 'sent' ? (
               <p className="notice" role="status">
@@ -139,9 +147,15 @@ export default function Submit() {
             ) : inPage ? (
               <>
                 {kind === 'removal' ? (
-                  <RemovalForm key={kind} onSubmit={handleSubmit} submitting={status === 'sending'} studioName={studio?.name} />
+                  <RemovalForm
+                    key={kind}
+                    onSubmit={handleSubmit}
+                    onValuesChange={setValues}
+                    submitting={status === 'sending'}
+                    studioName={studio?.name}
+                  />
                 ) : (
-                  <RegisterForm key={kind} onSubmit={handleSubmit} submitting={status === 'sending'} />
+                  <RegisterForm key={kind} onSubmit={handleSubmit} onValuesChange={setValues} submitting={status === 'sending'} />
                 )}
                 {status === 'error' && (
                   <p className="notice" role="alert">

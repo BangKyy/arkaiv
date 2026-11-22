@@ -1,13 +1,53 @@
 import { useState } from 'react'
 import Button from './Button'
+import ListEditor from './ListEditor'
 import RegionSelect from './RegionSelect'
 import { TagCategory } from './Tags'
 import { TextArea, TextField } from './Fields'
-import { ArrowUpRight, InstagramLogo } from './icons'
+import { ArrowUpRight, EnvelopeSimple, InstagramLogo, WhatsappLogo } from './icons'
 import { categories } from '../lib/catalog'
 
 const MAX_CATEGORIES = 3
 const DESCRIPTION_MAX = 300
+
+const PEOPLE_FIELDS = [
+  { key: 'name', label: 'Nama*' },
+  { key: 'role', label: 'Peran', placeholder: 'Creative Director' },
+  { key: 'photo', label: 'URL foto', placeholder: 'https://...' },
+  { key: 'internship', label: 'Internship', type: 'checkbox' },
+]
+
+const PROJECT_FIELDS = [
+  { key: 'title', label: 'Judul*' },
+  { key: 'year', label: 'Tahun', type: 'number', placeholder: '2026' },
+  {
+    key: 'category',
+    label: 'Kategori',
+    type: 'select',
+    options: categories.map((c) => ({ value: c.id, label: c.name })),
+  },
+  { key: 'description', label: 'Deskripsi singkat' },
+  { key: 'url', label: 'Tautan "Lihat lebih lanjut"', placeholder: 'https://...' },
+  { key: 'image', label: 'URL gambar', placeholder: 'https://...' },
+]
+
+/** One entry per non-empty line. */
+const lines = (s) =>
+  s
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+
+/** Drops empty optional keys so the stored JSON stays small. */
+const compact = (o) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== '' && v !== false && v != null))
+
+/** Errors for one list ("people.0.name") keyed as ListEditor expects ("0.name"). */
+const prefixed = (errors, list) =>
+  Object.fromEntries(
+    Object.entries(errors)
+      .filter(([k]) => k.startsWith(`${list}.`))
+      .map(([k, v]) => [k.slice(list.length + 1), v]),
+  )
 
 const slugify = (s = '') =>
   s
@@ -60,6 +100,27 @@ export default function StudioEditor({
     instagram: initial.instagram ?? '',
     categories: (initial.categories ?? []).slice(0, MAX_CATEGORIES),
     status: !initial.status || initial.status === 'published' ? 'published' : 'draft',
+    // Studio page content (Figma "Pages/Detailed Studio").
+    about: initial.about ?? '',
+    founded_year: initial.founded_year ? String(initial.founded_year) : '',
+    studio_type: initial.studio_type ?? '',
+    specialties: (initial.specialties ?? []).join(', '),
+    approach: initial.approach ?? '',
+    process: (initial.process ?? []).join('\n'),
+    people: (initial.people ?? []).map((p) => ({ name: '', role: '', photo: '', internship: false, ...p })),
+    projects: (initial.projects ?? []).map((p) => ({
+      title: '',
+      category: '',
+      description: '',
+      url: '',
+      image: '',
+      ...p,
+      year: p.year ? String(p.year) : '',
+    })),
+    contact_email: initial.contact_email ?? '',
+    contact_phone: initial.contact_phone ?? '',
+    contact_whatsapp: initial.contact_whatsapp ?? '',
+    opening_hours: initial.opening_hours ?? '',
   }))
   const [slugTouched, setSlugTouched] = useState(!isNew)
   const [errors, setErrors] = useState({})
@@ -95,6 +156,23 @@ export default function StudioEditor({
     if (!coords) next.coords = 'Tulis koordinat sebagai "lintang, bujur", mis. -7.2575, 112.7521.'
     if (!v.website.trim() && !v.instagram.trim()) next.website = 'Isi website atau Instagram (min salah satu).'
     if (!v.categories.length) next.categories = 'Pilih minimal satu kategori.'
+    const founded = v.founded_year.trim()
+    if (founded && !(/^\d{4}$/.test(founded) && founded >= 1900 && founded <= 2100)) {
+      next.founded_year = 'Tulis tahun empat angka, mis. 2011.'
+    }
+    if (v.contact_email.trim() && !/^\S+@\S+\.\S+$/.test(v.contact_email.trim())) {
+      next.contact_email = 'Masukkan email yang valid.'
+    }
+    // Rows left completely empty are dropped instead of flagged.
+    const people = v.people.filter((p) => p.internship || [p.name, p.role, p.photo].some((x) => x.trim()))
+    people.forEach((p, i) => {
+      if (!p.name.trim()) next[`people.${i}.name`] = 'Nama wajib diisi (atau hapus baris ini).'
+    })
+    const projects = v.projects.filter((p) => p.category || [p.title, p.year, p.description, p.url, p.image].some((x) => x.trim()))
+    projects.forEach((p, i) => {
+      if (!p.title.trim()) next[`projects.${i}.title`] = 'Judul wajib diisi (atau hapus baris ini).'
+      if (p.year.trim() && !/^\d{4}$/.test(p.year.trim())) next[`projects.${i}.year`] = 'Tulis tahun empat angka.'
+    })
     setErrors(next)
     if (Object.keys(next).length) {
       e.currentTarget.querySelector('[aria-invalid="true"]')?.focus()
@@ -113,6 +191,32 @@ export default function StudioEditor({
         website: normalizeUrl(v.website.trim()),
         instagram: normalizeHandle(v.instagram.trim()),
         status: v.status,
+        about: v.about.trim(),
+        founded_year: founded ? Number(founded) : null,
+        studio_type: v.studio_type.trim(),
+        specialties: v.specialties
+          .split(',')
+          .map((x) => x.trim())
+          .filter(Boolean),
+        approach: v.approach.trim(),
+        process: lines(v.process),
+        people: people.map((p) =>
+          compact({ name: p.name.trim(), role: p.role.trim(), photo: normalizeUrl(p.photo.trim()), internship: p.internship }),
+        ),
+        projects: projects.map((p) =>
+          compact({
+            title: p.title.trim(),
+            year: p.year.trim() ? Number(p.year) : null,
+            category: p.category,
+            description: p.description.trim(),
+            url: normalizeUrl(p.url.trim()),
+            image: normalizeUrl(p.image.trim()),
+          }),
+        ),
+        contact_email: v.contact_email.trim(),
+        contact_phone: v.contact_phone.trim(),
+        contact_whatsapp: v.contact_whatsapp.trim(),
+        opening_hours: lines(v.opening_hours).join('\n'),
       },
       categories: v.categories,
     })
@@ -200,6 +304,106 @@ export default function StudioEditor({
           })}
         </div>
         {errors.categories && <p className="field__hint register-form__error">{errors.categories}</p>}
+      </fieldset>
+
+      <fieldset className="studio-editor__group">
+        <legend className="studio-editor__group-title">Halaman studio</legend>
+        <p className="studio-editor__group-hint">Bagian yang kosong tidak tampil di halaman studio.</p>
+        <TextArea
+          label="Tentang"
+          value={values.about}
+          onChange={set('about')}
+          hint="Catatan di bagian Tentang. Kosong: memakai deskripsi."
+        />
+        <div className="register-form__row">
+          <TextField
+            label="Tahun berdiri"
+            value={values.founded_year}
+            onChange={set('founded_year')}
+            inputMode="numeric"
+            placeholder="2011"
+            error={errors.founded_year}
+          />
+          <TextField label="Jenis" value={values.studio_type} onChange={set('studio_type')} placeholder="Kantor Perusahaan" />
+        </div>
+        <TextField
+          label="Spesialisasi bebas"
+          value={values.specialties}
+          onChange={set('specialties')}
+          placeholder="identitas visual, packaging"
+          hint="Pisahkan dengan koma. Tampil sebagai tag bergaris."
+        />
+        <ListEditor
+          legend="Tim"
+          itemLabel="Anggota"
+          addLabel="Tambah anggota"
+          fields={PEOPLE_FIELDS}
+          items={values.people}
+          onChange={set('people')}
+          errors={prefixed(errors, 'people')}
+        />
+        <TextArea
+          label="Langkah proses"
+          value={values.process}
+          onChange={set('process')}
+          placeholder={'Riset bersama klien\nEksplorasi sketsa'}
+          hint="Satu langkah per baris. Tampil sebagai kotak Langkah 1, 2, ..."
+        />
+        <TextArea
+          label="Pendekatan"
+          value={values.approach}
+          onChange={set('approach')}
+          hint="Catatan di bawah langkah proses."
+        />
+        <ListEditor
+          legend="Portofolio"
+          itemLabel="Proyek"
+          addLabel="Tambah proyek"
+          fields={PROJECT_FIELDS}
+          items={values.projects}
+          onChange={set('projects')}
+          errors={prefixed(errors, 'projects')}
+        />
+      </fieldset>
+
+      <fieldset className="studio-editor__group">
+        <legend className="studio-editor__group-title">Kontak langsung</legend>
+        <p className="studio-editor__group-hint">Isi hanya dengan persetujuan studio. Tampil di bagian Kontak.</p>
+        <div className="register-form__row">
+          <TextField
+            label="Email"
+            type="email"
+            icon={EnvelopeSimple}
+            value={values.contact_email}
+            onChange={set('contact_email')}
+            placeholder="nama@studio.com"
+            error={errors.contact_email}
+          />
+          <TextField
+            label="Telepon"
+            type="tel"
+            value={values.contact_phone}
+            onChange={set('contact_phone')}
+            placeholder="031 123 4567"
+          />
+        </div>
+        <div className="register-form__row">
+          <TextField
+            label="WhatsApp"
+            type="tel"
+            icon={WhatsappLogo}
+            value={values.contact_whatsapp}
+            onChange={set('contact_whatsapp')}
+            placeholder="62812..."
+          />
+        </div>
+        <TextArea
+          label="Jam operasional"
+          value={values.opening_hours}
+          onChange={set('opening_hours')}
+          placeholder={'Senin - Jumat\n09.00 WIB - 16.00 WIB'}
+          hint="Setiap baris tampil di barisnya sendiri."
+        />
       </fieldset>
       <fieldset className="choice choice--row">
         <legend className="choice__legend">{statusLabel}</legend>

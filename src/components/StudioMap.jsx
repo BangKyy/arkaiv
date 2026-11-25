@@ -1,54 +1,106 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { MapLibreMap, Marker, NavigationControl, setWorkerUrl } from 'maplibre-gl'
+import { MapLibreMap, Marker, setWorkerUrl } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 // MapLibre 6 runs its worker from a separate module file; let Vite ship it and tell MapLibre where.
 import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url'
 import boundaries from '../data/surabaya-wilayah.geo.json'
+import kecamatan from '../data/surabaya-kecamatan.geo.json'
+import city from '../data/surabaya-kota.geo.json'
 import { useDirectory } from '../state/directory'
-import { getArea, getCategory } from '../lib/catalog'
-import { identityIndex } from '../lib/colors'
+import { getCategory } from '../lib/catalog'
 import { boundsOf } from '../lib/geo'
 import { track } from '../lib/analytics'
-import { ArrowClockwise } from './icons'
+import {
+  ArrowClockwise,
+  ArrowCounterClockwise,
+  MapPinSimpleLine,
+  MapTrifold,
+  Minus,
+  Plus,
+} from './icons'
 import Button from './Button'
 import StudioMarker from './StudioMarker'
+import { RegionTag } from './Tags'
+import clusterShape from '../assets/markers/cluster.svg'
 import t from '../i18n/id'
 
 setWorkerUrl(maplibreWorkerUrl)
 
-const SURABAYA_BOUNDS =boundsOf(boundaries.features.flatMap((f) => f.geometry.coordinates[0]))
+const SURABAYA_BOUNDS = boundsOf(city.geometry.coordinates.flat(2))
 const MAX_BOUNDS = [
   [112.35, -7.6],
   [113.1, -6.95],
 ]
 const CLUSTER_RADIUS_PX = 40
+// Figma "Map-Trigger" Variant=Zoom-out: below this zoom the region labels take their
+// small size (8px padding, 10px text).
+const DETAIL_ZOOM = 12
 
-// No tile server and no per-view fees (PRD section 12): the "basemap" is the
-// outlined wilayah shape on a muted ground, like the book cover.
-const MAP_STYLE = {
+// Figma "Map/Tools/TipeMap". "Peta" is a street map from OpenFreeMap (OpenStreetMap
+// data, no API key and no per-view fees, PRD section 12), drawn in grey by CSS.
+// "Diagram" needs no tile server at all: the city drawn as lines on paper, as on the
+// earlier directory prototype. The five wilayah get a faint tint of their region color
+// and a solid rule, the 31 kecamatan a thin dashed one, the city a heavier outline.
+// It is also the fallback when the street map cannot load.
+const STREET_STYLE = 'https://tiles.openfreemap.org/styles/positron'
+const INK = '#151515'
+const DIAGRAM_STYLE = {
   version: 8,
-  sources: { wilayah: { type: 'geojson', data: boundaries } },
+  sources: {
+    wilayah: { type: 'geojson', data: boundaries },
+    kecamatan: { type: 'geojson', data: kecamatan },
+    city: { type: 'geojson', data: city },
+  },
   layers: [
-    { id: 'ground', type: 'background', paint: { 'background-color': '#d9d7d1' } },
-    { id: 'wilayah-fill', type: 'fill', source: 'wilayah', paint: { 'fill-color': '#f5f4f0' } },
+    { id: 'ground', type: 'background', paint: { 'background-color': '#e9e6de' } },
+    {
+      id: 'wilayah-fill',
+      type: 'fill',
+      source: 'wilayah',
+      paint: {
+        // Colors/Region Color (see --region-* in index.css).
+        'fill-color': [
+          'match',
+          ['get', 'id'],
+          'pusat',
+          '#0e733b',
+          'utara',
+          '#8d3795',
+          'timur',
+          '#bf1e2e',
+          'selatan',
+          '#0489cc',
+          '#f1592a',
+        ],
+        'fill-opacity': 0.07,
+      },
+    },
+    {
+      id: 'kecamatan-line',
+      type: 'line',
+      source: 'kecamatan',
+      paint: {
+        'line-color': INK,
+        'line-width': 0.7,
+        'line-dasharray': [2, 3],
+        'line-opacity': 0.38,
+      },
+    },
     {
       id: 'wilayah-line',
       type: 'line',
       source: 'wilayah',
-      paint: { 'line-color': '#1f1f1f', 'line-width': 1.25 },
+      paint: { 'line-color': INK, 'line-width': 1.5, 'line-opacity': 0.72 },
     },
+    { id: 'city-line', type: 'line', source: 'city', paint: { 'line-color': INK, 'line-width': 1.8 } },
   ],
 }
 
+const styleFor = (mode) => (mode === 'peta' ? STREET_STYLE : DIAGRAM_STYLE)
+
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
-function centroid(ring) {
-  const pts = ring.slice(0, -1)
-  const sum = pts.reduce(([x, y], [px, py]) => [x + px, y + py], [0, 0])
-  return [sum[0] / pts.length, sum[1] / pts.length]
-}
 
 /** Greedy screen-space clustering (FR-02): nearby pins merge at low zoom. */
 function clusterStudios(map, studios) {
@@ -73,7 +125,10 @@ function clusterStudios(map, studios) {
       const members = group.map((g) => g.s)
       items.push({
         type: 'cluster',
-        key: `c:${members.map((m) => m.slug).sort().join('|')}`,
+        key: `c:${members
+          .map((m) => m.slug)
+          .sort()
+          .join('|')}`,
         members,
         lngLat: [
           members.reduce((a, s) => a + s.lng, 0) / members.length,
@@ -86,7 +141,7 @@ function clusterStudios(map, studios) {
 }
 
 export default function StudioMap({ focusSlug, padding }) {
-  const { visible, bySlug, hoveredSlug, setHoveredSlug, selectedSlug, setSelectedSlug } =
+  const { visible, bySlug, filters, hoveredSlug, setHoveredSlug, selectedSlug, setSelectedSlug } =
     useDirectory()
   const containerRef = useRef(null)
   const mapRef = useRef(null) // for handlers and effects
@@ -95,6 +150,8 @@ export default function StudioMap({ focusSlug, padding }) {
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const [viewTick, setViewTick] = useState(0)
+  const [mode, setMode] = useState('peta')
+  const modeRef = useRef(mode)
 
   // Create the map once per attempt (a retry after an error remounts it).
   useEffect(() => {
@@ -104,7 +161,7 @@ export default function StudioMap({ focusSlug, padding }) {
     try {
       instance = new MapLibreMap({
         container: containerRef.current,
-        style: MAP_STYLE,
+        style: styleFor(modeRef.current),
         bounds: SURABAYA_BOUNDS,
         fitBoundsOptions: { padding: 32 },
         maxBounds: MAX_BOUNDS,
@@ -123,7 +180,6 @@ export default function StudioMap({ focusSlug, padding }) {
     mapRef.current = instance
     instance.touchZoomRotate.disableRotation()
     instance.keyboard.disableRotation()
-    instance.addControl(new NavigationControl({ showCompass: false }), 'top-right')
     instance.getCanvas().setAttribute('aria-label', t.map.label)
 
     // Warm the GSAP chunk while the map loads; it is used for the pin reveal only.
@@ -131,18 +187,17 @@ export default function StudioMap({ focusSlug, padding }) {
 
     instance.on('load', () => {
       loaded = true
-      for (const f of boundaries.features) {
-        const el = document.createElement('div')
-        el.className = 'wilayah-label'
-        el.setAttribute('aria-hidden', 'true')
-        el.textContent = getArea(f.properties.id)?.code ?? ''
-        new Marker({ element: el }).setLngLat(centroid(f.geometry.coordinates[0])).addTo(instance)
-      }
       setMap(instance)
-      track('map_loaded', { ms: Math.round(performance.now() - started) })
+      track('map_loaded', { ms: Math.round(performance.now() - started), mode: modeRef.current })
     })
     instance.on('error', () => {
-      if (!loaded) setFailed(true)
+      if (loaded) return
+      // The street map is a third-party service; without it the diagram still works.
+      if (modeRef.current === 'peta') {
+        modeRef.current = 'diagram'
+        setMode('diagram')
+        instance.setStyle(DIAGRAM_STYLE)
+      } else setFailed(true)
     })
     instance.on('moveend', () => setViewTick((v) => v + 1))
     instance.on('click', (e) => {
@@ -159,6 +214,14 @@ export default function StudioMap({ focusSlug, padding }) {
       setMap(null)
     }
   }, [attempt, setSelectedSlug])
+
+  const changeMode = (next) => {
+    if (next === modeRef.current) return
+    modeRef.current = next
+    setMode(next)
+    mapRef.current?.setStyle(styleFor(next))
+    track('map_type', { mode: next })
+  }
 
   // viewTick re-runs clustering after every pan or zoom.
   const items = useMemo(
@@ -196,18 +259,49 @@ export default function StudioMap({ focusSlug, padding }) {
     else map.flyTo({ ...opts, duration: 900 })
   }, [map, focusSlug, bySlug, padding])
 
+  // viewTick re-renders after every pan or zoom, so this follows the zoom.
+  const zoomedOut = map ? map.getZoom() < DETAIL_ZOOM : true
+  const dimmed = (areaId) => filters.areas.length > 0 && !filters.areas.includes(areaId)
+
   const isActive = (slug) => slug === hoveredSlug || slug === selectedSlug || slug === focusSlug
 
+  // MapLibre copies every key it is given, so `duration: undefined` would replace its
+  // default and stall the animation: only pass a duration to turn motion off.
+  const motion = () => (prefersReducedMotion() ? { duration: 0 } : {})
+  const zoomIn = () => mapRef.current?.zoomIn(motion())
+  const zoomOut = () => mapRef.current?.zoomOut(motion())
+  const resetView = () => mapRef.current?.fitBounds(SURABAYA_BOUNDS, { padding: 32, ...motion() })
+
   const expandCluster = (members) => {
-    mapRef.current?.fitBounds(
-      boundsOf(members.map((m) => [m.lng, m.lat])),
-      { padding: 80, maxZoom: 16, duration: prefersReducedMotion() ? 0 : 700 },
-    )
+    mapRef.current?.fitBounds(boundsOf(members.map((m) => [m.lng, m.lat])), {
+      padding: 80,
+      maxZoom: 16,
+      duration: prefersReducedMotion() ? 0 : 700,
+    })
   }
 
   return (
-    <div className="map-wrap">
+    <div className={`map-wrap map-wrap--${mode}`}>
       <div ref={containerRef} className="map" />
+
+      {map &&
+        boundaries.features.map((f) => (
+          <MapMarker
+            key={f.properties.id}
+            map={map}
+            lngLat={f.properties.label}
+            anchor="center"
+          >
+            {/* While regions are filtered, the others drop to the white, outlined tag. */}
+            <RegionTag
+              id={f.properties.id}
+              variant={dimmed(f.properties.id) ? 'white' : 'initial-white'}
+              bordered={dimmed(f.properties.id)}
+              className={`map-region ${zoomedOut ? 'map-region--sm' : ''}`}
+              aria-hidden="true"
+            />
+          </MapMarker>
+        ))}
 
       {map &&
         items.map((item) =>
@@ -236,7 +330,7 @@ export default function StudioMap({ focusSlug, padding }) {
               key={item.key}
               map={map}
               lngLat={item.lngLat}
-              anchor="center"
+              anchor="bottom"
               raised={item.members.some((m) => isActive(m.slug))}
             >
               <Cluster
@@ -247,6 +341,53 @@ export default function StudioMap({ focusSlug, padding }) {
             </MapMarker>
           ),
         )}
+
+      <div className="map-tool map-type" role="group" aria-label={t.map.type}>
+        <MapTypeButton
+          mode="peta"
+          current={mode}
+          icon={MapTrifold}
+          label={t.map.typeMap}
+          onPick={changeMode}
+        />
+        <MapTypeButton
+          mode="diagram"
+          current={mode}
+          icon={MapPinSimpleLine}
+          label={t.map.typeDiagram}
+          onPick={changeMode}
+        />
+      </div>
+
+      {/* Figma "Map/Tools/Zoom": in, out, and back to the whole city. */}
+      <div className="map-tool map-zoom">
+        <button
+          type="button"
+          className="map-zoom__button"
+          onClick={zoomIn}
+          aria-label={t.map.zoomIn}
+        >
+          <Plus size={22} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className="map-zoom__button"
+          onClick={zoomOut}
+          aria-label={t.map.zoomOut}
+        >
+          <Minus size={22} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className="map-zoom__button"
+          onClick={resetView}
+          aria-label={t.map.reset}
+        >
+          <ArrowCounterClockwise size={22} aria-hidden="true" />
+        </button>
+      </div>
+
+      {mode === 'peta' && <p className="map-attribution">{t.map.attribution}</p>}
 
       {failed && (
         <div className="map-error" role="alert">
@@ -302,6 +443,24 @@ function MapMarker({ map, lngLat, anchor, raised, children }) {
   return createPortal(children, el)
 }
 
+/** One choice of "Map/Tools/TipeMap": the word on desktop, its icon on smaller screens. */
+function MapTypeButton({ mode, current, icon: Icon, label, onPick }) {
+  return (
+    <button
+      type="button"
+      className="map-type__option"
+      aria-pressed={mode === current}
+      aria-label={label}
+      onClick={() => onPick(mode)}
+    >
+      <span className="map-type__label" aria-hidden="true">
+        {label}
+      </span>
+      <Icon className="map-type__icon" size={18} aria-hidden="true" />
+    </button>
+  )
+}
+
 function Pin({ studio, active, expanded, onSelect, onHover }) {
   const cat = getCategory(studio.primaryCategory)
   return (
@@ -321,7 +480,8 @@ function Pin({ studio, active, expanded, onSelect, onHover }) {
       onFocus={() => onHover(studio.slug)}
       onBlur={() => onHover(null)}
     >
-      <StudioMarker category={cat?.icon} identity={identityIndex(studio.accent)} />
+      {/* Figma "Map Marker Category": the neutral ink pin with the category icon. */}
+      <StudioMarker category={cat?.icon} />
     </button>
   )
 }
@@ -337,7 +497,9 @@ function Cluster({ members, active, onExpand }) {
         onExpand()
       }}
     >
-      {members.length}
+      {/* Figma "Map Marker Category" Variant=Zoom-out: the count in a paper marker. */}
+      <img className="cluster__shape" src={clusterShape} alt="" width="44" height="52" />
+      <span className="cluster__count">{members.length}</span>
     </button>
   )
 }

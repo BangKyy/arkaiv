@@ -18,34 +18,53 @@ export default {
 
   footer: 'Direktori Studio Desain Surabaya 2027',
 
-  sampleBanner: 'Data contoh: studio di peta ini fiktif dan hanya untuk pengembangan.',
+  search: {
+    label: 'Cari studio',
+    placeholder: 'Cari nama studio, kategori…',
+  },
 
   filter: {
-    label: 'Filter kategori',
+    label: 'Filter studio',
+    categories: 'Kategori',
+    areas: 'Wilayah',
     all: 'Semua',
+    allCategories: 'Semua kategori',
+    allAreas: 'Semua wilayah',
     clear: 'Hapus filter',
-    active: (n) => `${n} kategori aktif`,
   },
 
   list: {
     heading: 'Daftar studio',
-    count: (shown, total) => (shown === total ? `${total} studio` : `${shown} dari ${total} studio`),
+    shown: 'Studio ditampilkan',
+    sortAz: 'A-Z',
+    sortZa: 'Z-A',
+    sortLabel: 'Urutan nama, tekan untuk membalik:',
     empty: 'Tidak ada studio yang cocok dengan filter ini.',
-    expand: 'Tampilkan daftar',
-    collapse: 'Sembunyikan daftar',
-    panelToggle: 'Panel daftar',
+    show: 'Tampilkan Panel',
+    hide: 'Sembunyikan Panel',
+    shortProfile: 'Lihat profil singkat',
+    back: 'Kembali ke daftar',
+    more: 'Lihat selengkapnya',
+    cta: 'Yuk daftarkan studiomu',
+    panelToggle: 'Panel daftar studio',
   },
 
   map: {
     label: 'Peta studio desain Surabaya',
+    type: 'Tipe peta',
+    typeMap: 'Peta',
+    typeDiagram: 'Diagram',
+    zoomIn: 'Perbesar',
+    zoomOut: 'Perkecil',
+    reset: 'Tampilkan seluruh Surabaya',
+    attribution: '© OpenStreetMap · OpenFreeMap',
     legend: 'Keterangan',
-    legendPin: 'Ikon pin menunjukkan kategori utama studio. Warna pin adalah warna penanda studio.',
+    legendPin: 'Ikon pin menunjukkan kategori utama studio. Label berwarna menandai lima wilayah Surabaya.',
     cluster: (n) => `${n} studio di sekitar sini, perbesar`,
     pin: (name, category) => `${name}, ${category}`,
     errorTitle: 'Peta tidak dapat dimuat.',
     errorBody: 'Daftar studio tetap bisa dipakai di bawah ini.',
     retry: 'Coba lagi',
-    boundaryNote: 'Batas wilayah disederhanakan.',
   },
 
   card: {

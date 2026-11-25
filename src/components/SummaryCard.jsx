@@ -2,14 +2,16 @@ import { useEffect, useRef } from 'react'
 import { Link } from 'react-router'
 import { motion } from 'motion/react'
 import { useDirectory } from '../state/directory'
-import { AreaTag, CategoryChips, CodeTab } from './StudioBits'
+import { StudioBadges } from './StudioBits'
+import { categoryLine } from '../lib/catalog'
 import { ArrowUpRight, X } from './icons'
 import Button from './Button'
 import t from '../i18n/id'
 
 /**
- * FR-04 / US-02: short summary of the selected pin, kept to name, categories,
- * area and one line (PRD "Informative" rule). Depth lives in the profile.
+ * Figma "Map/Tools/CardPreview" (Variant=Black), FR-04 / US-02: short summary of the
+ * selected pin, kept to area, categories, name and one line (PRD "Informative" rule).
+ * Depth lives in the profile.
  */
 export default function SummaryCard({ studio }) {
   const { setSelectedSlug } = useDirectory()
@@ -23,13 +25,18 @@ export default function SummaryCard({ studio }) {
   }
 
   useEffect(() => {
-    cardRef.current?.focus({ preventScroll: true })
+    // A pick in the panel, or closing it with its button, keeps focus where it is.
+    if (!document.activeElement?.closest('.panel, .panel-toggle')) {
+      cardRef.current?.focus({ preventScroll: true })
+    }
     const onKey = (e) => {
       if (e.key === 'Escape') close(true)
     }
+    // A tap elsewhere closes the card, except on pins and in the panel, which shows
+    // the same studio's short profile.
     const onPointer = (e) => {
       if (cardRef.current?.contains(e.target)) return
-      if (e.target.closest?.('.pin, .cluster')) return
+      if (e.target.closest?.('.pin, .cluster, .panel, .panel-toggle')) return
       close(false)
     }
     document.addEventListener('keydown', onKey)
@@ -54,24 +61,26 @@ export default function SummaryCard({ studio }) {
       transition={{ duration: 0.18, ease: 'easeOut' }}
     >
       <div className="summary-card__top">
-        <CodeTab studio={studio} />
+        <StudioBadges studio={studio} />
         <button
           type="button"
-          className="icon-button"
+          className="summary-card__close"
           onClick={() => close(true)}
           aria-label={t.card.close}
         >
-          <X size={18} weight="bold" aria-hidden="true" />
+          <X size={18} aria-hidden="true" />
         </button>
       </div>
-      <h2 id="summary-card-title" className="summary-card__name">
-        {studio.name}
-      </h2>
-      <CategoryChips ids={studio.categories} primary={studio.primaryCategory} />
-      <AreaTag id={studio.area} compact />
-      <p className="summary-card__line">{studio.description}</p>
+      <div className="summary-card__text">
+        <p className="summary-card__cats">{categoryLine(studio)}</p>
+        <h2 id="summary-card-title" className="summary-card__name">
+          {studio.name}
+        </h2>
+        <p className="summary-card__line">{studio.description}</p>
+      </div>
       <Button
         as={Link}
+        size="sm"
         className="summary-card__cta"
         icon={ArrowUpRight}
         to={`/studio/${studio.slug}`}

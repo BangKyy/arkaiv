@@ -35,18 +35,22 @@ export default function DirectoryProvider({ children }) {
   const visible = useMemo(() => applyFilters(studios, filters), [studios, filters])
   const bySlug = useMemo(() => new Map(studios.map((s) => [s.slug, s])), [studios])
 
-  const setCategories = useCallback(
-    (categories) => {
-      setSearchParams((prev) => writeFilters(prev, { ...readFilters(prev), categories }), {
+  // `patch` holds any of categories, areas and query.
+  const updateFilters = useCallback(
+    (patch) => {
+      setSearchParams((prev) => writeFilters(prev, { ...readFilters(prev), ...patch }), {
         replace: true,
       })
       // Close the summary card if its studio is filtered out.
       setSelectedSlug((slug) =>
-        slug && applyFilters(studios, { categories }).some((s) => s.slug === slug) ? slug : null,
+        slug && applyFilters(studios, { ...filters, ...patch }).some((s) => s.slug === slug)
+          ? slug
+          : null,
       )
-      track('filter_applied', { category: categories.join(',') || 'none' })
+      if (patch.categories) track('filter_applied', { category: patch.categories.join(',') || 'none' })
+      if (patch.areas) track('filter_applied', { area: patch.areas.join(',') || 'none' })
     },
-    [setSearchParams, studios],
+    [setSearchParams, studios, filters],
   )
 
   const value = useMemo(
@@ -56,15 +60,17 @@ export default function DirectoryProvider({ children }) {
       visible,
       bySlug,
       filters,
-      setCategories,
-      clearFilters: () => setCategories([]),
+      setCategories: (categories) => updateFilters({ categories }),
+      setAreas: (areas) => updateFilters({ areas }),
+      setQuery: (query) => updateFilters({ query }),
+      clearFilters: () => updateFilters({ categories: [], areas: [], query: '' }),
       hoveredSlug,
       setHoveredSlug,
       // Never point at a studio that is filtered out or gone after a data refresh.
       selectedSlug: visible.some((s) => s.slug === selectedSlug) ? selectedSlug : null,
       setSelectedSlug,
     }),
-    [studios, ready, visible, bySlug, filters, setCategories, hoveredSlug, selectedSlug],
+    [studios, ready, visible, bySlug, filters, updateFilters, hoveredSlug, selectedSlug],
   )
 
   return <DirectoryContext.Provider value={value}>{children}</DirectoryContext.Provider>

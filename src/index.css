@@ -31,6 +31,7 @@
   --neutral-200: #e5e5e5;
   --neutral-300: #d4d4d4;
   --text-secondary: #7f7d7d;
+  --text-surface: #4c4b4d; /* text/surface: filter row labels */
   --text-border: #b4b1af; /* text/border: idle field borders, labels, placeholders */
   --surface: #fbf9f3; /* surface/default */
   /* Colors/Agency Categories Color: marker (solid) and information (50% tint) */
@@ -148,11 +149,13 @@ img {
   flex-direction: column;
 }
 
-/* Figma "Organism/Global Header": lg bar 32/80 padding, 32/30 on tablet, sm-1 below 728px. */
+/* Figma "Organism/Global Header": lg bar 24/80 padding, 24/30 on tablet, sm-1 (24/32) below
+   728px; 133×28 logo, lg (14/20) links and call to action. */
 .global-header {
   position: relative;
   z-index: 20;
-  border-bottom: 1px solid var(--btn-base);
+  /* Figma draws the bottom rule inside the 88px frame, so it adds no height. */
+  box-shadow: inset 0 -1px 0 var(--btn-base);
   background: var(--canvas);
 }
 
@@ -161,7 +164,7 @@ img {
   align-items: center;
   justify-content: space-between;
   gap: 28px;
-  padding: 32px 80px;
+  padding: 24px 80px;
 }
 
 .global-header__brand {
@@ -174,8 +177,10 @@ img {
   max-width: none;
 }
 
-.global-header__search {
-  flex: 0 1 361px;
+/* 48px tall like the Figma search (its border is drawn inside), so the bar is 96px. */
+.search.global-header__search {
+  flex: 0 1 363px;
+  padding-block: 13px;
 }
 
 .global-nav {
@@ -201,7 +206,7 @@ img {
 @media (max-width: 1099px) {
   .global-header__bar {
     gap: 0;
-    padding: 32px 30px;
+    padding: 24px 30px;
   }
 
   .global-header__bar .global-header__search {
@@ -209,15 +214,67 @@ img {
   }
 }
 
-/* Figma Size=sm-1: logo and a menu button; the open menu drops below the bar. */
+/* Figma Size=sm-1: logo and a menu button; the open menu drops below the bar.
+   Phones always; below desktop also with SearchBar=True, which leaves no room for the nav. */
 .global-header__toggle,
 .mobile-menu {
   display: none;
 }
 
+.global-header__toggle {
+  place-items: center;
+  padding: 11px 10px 9px;
+  border: 1px solid var(--btn-base);
+  background: var(--canvas);
+  color: var(--btn-base);
+  cursor: pointer;
+}
+
+/* Same states as an outlined button. */
+.global-header__toggle:hover {
+  border-color: var(--btn-hover);
+  color: var(--btn-hover);
+}
+
+.global-header__toggle:is(:active, :focus) {
+  border-color: var(--btn-pressed);
+  color: var(--btn-pressed);
+}
+
+/* Overlays the page below the header (and its bottom rule) instead of pushing it down. */
+.mobile-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px;
+  border-bottom: 1px solid var(--btn-base);
+  background: var(--canvas);
+}
+
+@media (max-width: 1099px) {
+  .global-header--search .global-header__bar {
+    padding: 24px 32px;
+  }
+
+  .global-header--search .global-nav {
+    display: none;
+  }
+
+  .global-header--search .global-header__toggle {
+    display: inline-grid;
+  }
+
+  .global-header--search .mobile-menu {
+    display: flex;
+  }
+}
+
 @media (max-width: 727px) {
   .global-header__bar {
-    padding: 32px;
+    padding: 24px 32px;
   }
 
   .global-nav {
@@ -226,37 +283,10 @@ img {
 
   .global-header__toggle {
     display: inline-grid;
-    place-items: center;
-    padding: 11px 10px 9px;
-    border: 1px solid var(--btn-base);
-    background: var(--canvas);
-    color: var(--btn-base);
-    cursor: pointer;
   }
 
-  /* Same states as an outlined button. */
-  .global-header__toggle:hover {
-    border-color: var(--btn-hover);
-    color: var(--btn-hover);
-  }
-
-  .global-header__toggle:is(:active, :focus) {
-    border-color: var(--btn-pressed);
-    color: var(--btn-pressed);
-  }
-
-  /* Overlays the page below the header's own bottom rule instead of pushing it down. */
   .mobile-menu {
-    position: absolute;
-    top: calc(100% + 1px);
-    left: 0;
-    right: 0;
     display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 32px;
-    border-bottom: 1px solid var(--btn-base);
-    background: var(--canvas);
   }
 }
 
@@ -312,14 +342,6 @@ img {
     font-size: 12px;
     line-height: 18px;
   }
-}
-
-.sample-banner {
-  margin: 0;
-  padding: 6px 16px;
-  font-size: 12px;
-  border-bottom: 1px dashed var(--line);
-  background: repeating-linear-gradient(-45deg, var(--paper), var(--paper) 8px, var(--paper-2) 8px, var(--paper-2) 16px);
 }
 
 .main {
@@ -2159,11 +2181,19 @@ img {
   padding: 0;
 }
 
-.chip__count {
-  font-family: var(--font-accent);
-  font-weight: 700;
-  font-size: 12px;
-  opacity: 0.75;
+/* A count inside a category filter tag: Doto Black 12/18 on an ink box, paper when pressed. */
+.tag-count {
+  min-width: 18px;
+  padding: 0 4px;
+  background: var(--btn-base);
+  color: var(--canvas);
+  font: 900 12px/18px var(--font-accent);
+  text-align: center;
+}
+
+[aria-pressed='true'] > .tag-count {
+  background: var(--canvas);
+  color: var(--btn-base);
 }
 
 /* Shared box of every Figma tag: 11/9/12 padding, 10px gap, 12/18 Geist Mono caps. */
@@ -2281,6 +2311,19 @@ button.tag-cat {
   --tag-chip-fg: var(--btn-base);
 }
 
+button.tag-region {
+  cursor: pointer;
+}
+
+/* A pressed region filter: Figma State=Actived is the initial-white tag. */
+.tag-region[aria-pressed='true'] {
+  --tag-box: var(--region);
+  --tag-chip: var(--canvas);
+  --tag-chip-fg: var(--btn-base);
+  --tag-fg: var(--canvas);
+  border-color: var(--region);
+}
+
 .tag-region__code {
   padding: 2px 10px;
   background: var(--tag-chip);
@@ -2306,94 +2349,128 @@ button.tag-cat {
 
 /* ---------- Explore layout ---------- */
 
+/* Figma "Pages/Jelajahi Map": filters over the map, "Map/Sidebar" to their right. */
 .explore {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-bottom: 1.5px solid var(--line);
-  background: var(--paper);
-}
-
-.filter-bar__scroll {
-  display: flex;
-  gap: 6px;
-  flex: 1;
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding: 2px;
-}
-
-.filter-bar__scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.filter-bar__clear {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  flex: none;
-  min-height: 40px;
-  padding: 0 8px;
-  border: 0;
-  background: none;
-  font: 500 13px var(--font-body);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.explore__body {
   position: relative;
-  flex: 1;
-  min-height: 0;
+  height: 100%;
   display: flex;
   overflow: hidden;
 }
 
-.panel {
-  flex: none;
-  width: 380px;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  border-right: 1.5px solid var(--line);
-  background: var(--paper);
+.explore__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.panel[hidden] {
+/* Figma "Filter Data Map": 24px padding, rows 12px apart, tags 10px apart. */
+.map-filter {
+  flex: none;
+  display: grid;
+  gap: 12px;
+  padding: 24px 64px 24px 24px; /* the right side leaves room for the panel button */
+  border-bottom: 1px solid var(--btn-base);
+  background: var(--canvas);
+}
+
+.map-filter__row {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.map-filter__label {
+  flex: none;
+  width: 105px;
+  font: 500 14px/20px var(--font-body);
+  color: var(--text-surface);
+  text-transform: uppercase;
+}
+
+/* Rows scroll sideways; the block padding keeps focus rings clear of the clip. */
+.map-filter__tags {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin-block: -3px;
+  padding: 3px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.map-filter__tags::-webkit-scrollbar {
   display: none;
+}
+
+/* Every filter tag is 41px tall, as in Figma (the region chip's 2px padding fits inside). */
+.map-filter__tags > * {
+  flex: none;
+  height: 41px;
+}
+
+.map-filter .tag-region {
+  padding-block: 9px 8px;
 }
 
 .explore__map {
   position: relative;
   flex: 1;
-  min-width: 0;
+  min-height: 0;
 }
 
+/* Desktop: "Map/Sidebar" Size=lg, a 330px column beside the filters and map
+   (its width in "Map-Trigger"). */
+.panel {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  width: 330px;
+  min-height: 0;
+  border-left: 1px solid var(--btn-base);
+  background: var(--canvas);
+}
+
+/* Figma "Sidebar/ShowPanel": ink box, the caret in an outlined square. */
 .panel-toggle {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 5;
+  top: 25px;
+  right: 0;
+  z-index: 8;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 0 12px;
-  border: 1.5px solid var(--line);
-  border-radius: 6px;
-  background: var(--paper);
-  font: 500 13px var(--font-body);
-  color: var(--ink);
+  gap: 12px;
+  padding: 7px; /* 40px square with its outline, as in Figma */
+  border: 1px solid var(--canvas);
+  background: var(--btn-base);
+  color: var(--canvas);
+  font: 500 14px/20px var(--font-body);
+  white-space: nowrap;
   cursor: pointer;
+}
+
+.panel-toggle__icon {
+  display: grid;
+  padding: 4px;
+  border: 1px solid var(--canvas);
+}
+
+/* Open, it straddles the panel's edge (Figma left: -20px). */
+.explore.is-panel-open .panel-toggle {
+  right: 310px;
+}
+
+@media (min-width: 1100px) {
+  /* State=Hover shows the words; otherwise they are for screen readers only. */
+  .panel-toggle:not(:hover, :focus-visible) .panel-toggle__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
 }
 
 /* ---------- Map ---------- */
@@ -2410,16 +2487,9 @@ button.tag-cat {
   background: var(--ground);
 }
 
-.maplibregl-ctrl-group {
-  border: 1.5px solid var(--line);
-  border-radius: 6px !important;
-  box-shadow: none !important;
-  overflow: hidden;
-}
-
-.maplibregl-ctrl-group button {
-  width: 36px;
-  height: 36px;
+/* "Peta" is OpenFreeMap's Positron style, drawn in grey as in the Figma page. */
+.map-wrap--peta .maplibregl-canvas {
+  filter: grayscale(1);
 }
 
 .maplibregl-canvas:focus-visible {
@@ -2427,12 +2497,94 @@ button.tag-cat {
   outline-offset: -3px;
 }
 
-.wilayah-label {
-  font: 700 14px var(--font-accent);
-  letter-spacing: 0.12em;
-  color: rgb(20 20 20 / 0.42);
+.map-attribution {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  z-index: 4;
+  margin: 0;
+  padding: 1px 4px;
+  background: rgb(243 240 232 / 0.85);
+  font: 400 10px/14px var(--font-body);
+  color: var(--btn-base);
+  white-space: nowrap;
+}
+
+/* Region names on the map: "Tag/Category" Region=..., initial-white (white and outlined
+   for regions outside an active region filter). Zoomed out they are smaller. */
+.map-region {
   pointer-events: none;
   user-select: none;
+}
+
+.map-region--sm {
+  padding: 8px;
+  font-size: 10px;
+}
+
+/* Figma "Map/Tools/*": ink boxes with a paper outline, over the map. */
+.map-tool {
+  position: absolute;
+  z-index: 5;
+  border: 1px solid var(--canvas);
+  background: var(--btn-base);
+  color: var(--canvas);
+}
+
+/* "Map/Tools/TipeMap": Peta / Diagram (words on desktop, icons below). */
+.map-type {
+  top: 30px;
+  right: 30px;
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+}
+
+.map-type__option {
+  display: inline-flex;
+  align-items: center;
+  padding: 11px 12px 9px;
+  border: 1.5px solid var(--canvas);
+  background: transparent;
+  color: var(--canvas);
+  font: 500 12px/18px var(--font-body);
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.map-type__option[aria-pressed='true'] {
+  background: var(--canvas);
+  color: var(--btn-base);
+  font-weight: 700;
+}
+
+.map-type__icon {
+  display: none;
+}
+
+/* "Map/Tools/Zoom": 34px outlined squares, paper when hovered or pressed. */
+.map-zoom {
+  left: 30px;
+  bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 7px; /* 50x134 with its outline, as in Figma */
+}
+
+.map-zoom__button {
+  display: grid;
+  place-items: center;
+  padding: 5px;
+  border: 1px solid var(--canvas);
+  background: transparent;
+  color: var(--canvas);
+  cursor: pointer;
+}
+
+.map-zoom__button:is(:hover, :active) {
+  background: var(--canvas);
+  color: var(--btn-base);
 }
 
 .pin {
@@ -2499,24 +2651,37 @@ button.tag-cat {
   outline-offset: 2px;
 }
 
+/* Figma "Map Marker Category" Variant=Zoom-out: a 44x52 paper marker with the count
+   in Geist Mono Bold 20/30. */
 .cluster {
-  display: grid;
-  place-items: center;
-  width: 42px;
-  height: 42px;
-  border: 2px solid var(--paper);
-  border-radius: 50%;
-  background: var(--ink);
-  color: var(--paper);
-  box-shadow: 0 0 0 2px var(--ink);
-  font: 700 16px var(--font-accent);
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: 0;
   cursor: pointer;
+  transition: transform 0.15s ease-out;
 }
 
+.cluster__shape {
+  display: block;
+  max-width: none;
+}
+
+.cluster__count {
+  position: absolute;
+  top: 7px;
+  left: 0;
+  right: 0;
+  font: 700 20px/30px var(--font-body);
+  color: var(--btn-base);
+  text-align: center;
+}
+
+.cluster:hover,
 .cluster.is-active {
-  background: var(--paper);
-  color: var(--ink);
-  border-color: var(--ink);
+  transform: translateY(-4px);
 }
 
 .map-error {
@@ -2537,43 +2702,86 @@ button.tag-cat {
   margin: 0;
 }
 
+/* "Map/Tools/Info" (State=Closed): 162x40, opening downwards into the key. */
 .legend {
-  position: absolute;
-  right: 12px;
-  bottom: 16px;
-  z-index: 5;
-  max-width: min(300px, calc(100% - 24px));
-  border: 1.5px solid var(--line);
-  border-radius: 6px;
-  background: var(--paper);
-  font-size: 12px;
+  top: 30px;
+  left: 30px;
+  width: 162px;
+  max-width: calc(100% - 20px);
+  padding: 7px; /* 40px tall with its outline, as in Figma */
 }
 
-.legend summary {
+/* State=Opened: 298px, 24px under the key. */
+.legend[open] {
+  width: 298px;
+  padding: 7px 7px 23px;
+}
+
+.legend__summary {
   display: flex;
   align-items: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 0 12px;
-  cursor: pointer;
+  justify-content: space-between;
   list-style: none;
-  font-weight: 600;
+  font: 400 14px/20px var(--font-body);
+  cursor: pointer;
 }
 
-.legend summary::-webkit-details-marker {
+.legend__summary::-webkit-details-marker {
   display: none;
 }
 
+.legend__title {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.legend__icon-box {
+  display: grid;
+  padding: 4px;
+}
+
+.legend[open] .legend__caret {
+  transform: rotate(180deg);
+}
+
 .legend__body {
-  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 0 26px;
+  font: 400 12px/18px var(--font-body);
+}
+
+.legend__body p {
+  margin: 0;
+}
+
+.legend__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.legend__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legend__heading {
+  margin: 0;
+  font: 700 12px/18px var(--font-body);
+  text-transform: uppercase;
 }
 
 .legend__list {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   list-style: none;
-  margin: 0 0 10px;
+  margin: 0;
   padding: 0;
 }
 
@@ -2583,154 +2791,404 @@ button.tag-cat {
   gap: 6px;
 }
 
-.legend__icon {
-  display: inline-grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border: 1.5px solid var(--ink);
-  border-radius: 4px;
-  background: var(--card);
-}
-
-.legend__note {
-  margin: 0;
-  color: var(--ink-2);
+.legend__code {
+  padding: 0 5px;
+  background: var(--region);
+  font: 500 10px/18px var(--font-body);
 }
 
 /* ---------- Summary card ---------- */
 
+
+/* Figma "Map/Tools/CardPreview" (Variant=Black): 350px, bottom right of the map. */
 .summary-card {
   position: absolute;
-  left: 16px;
-  bottom: 16px;
+  right: 30px;
+  bottom: 30px;
   z-index: 6;
-  width: min(360px, calc(100% - 32px));
-  display: grid;
-  gap: 8px;
-  padding: 14px 16px 16px;
-  border: 1.5px solid var(--line);
-  border-radius: var(--radius-tab);
-  background: var(--card);
-  box-shadow: 4px 4px 0 var(--ink);
+  width: min(350px, calc(100% - 60px));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 23px; /* 24px inside its outline */
+  border: 1px solid var(--canvas);
+  background: var(--btn-base);
+  color: var(--canvas);
+}
+
+.summary-card:focus-visible {
+  outline-offset: 0;
 }
 
 .summary-card__top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+}
+
+.summary-card__close {
+  flex: none;
+  display: grid;
+  padding: 2px;
+  border: 1px solid var(--canvas);
+  background: none;
+  color: var(--canvas);
+  cursor: pointer;
+}
+
+.summary-card__close:hover {
+  background: var(--canvas);
+  color: var(--btn-base);
+}
+
+.summary-card__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.summary-card__text p {
+  margin: 0;
+}
+
+/* The categories are set in Doto here. */
+.summary-card__cats {
+  font: 900 12px/18px var(--font-accent);
+  color: var(--text-secondary);
 }
 
 .summary-card__name {
-  font-size: 20px;
   margin: 0;
+  font: 700 20px/30px var(--font-body);
+  color: var(--canvas);
 }
 
 .summary-card__line {
-  margin: 0;
-  font-size: 13px;
-  color: var(--ink-2);
+  font: 400 12px/18px var(--font-body);
+  color: var(--text-secondary);
 }
 
-.summary-card__cta {
-  justify-self: start;
+/* A paper button on the ink card. */
+.btn.summary-card__cta {
+  --btn-base: var(--canvas);
+  --btn-hover: var(--neutral-200);
+  --btn-pressed: var(--text-border);
   margin-top: 4px;
+  color: #252722;
 }
 
-/* ---------- Panel: list ---------- */
-
-.panel-section {
-  padding-bottom: 24px;
-}
-
-.panel-head {
-  position: sticky;
-  top: 0;
-  z-index: 1;
+/* Area code and category icon boxes ("CardPreview" and the panel's short profile). */
+.studio-badges {
+  --badge-bg: var(--btn-base);
+  --badge-fg: var(--canvas);
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 4px;
+}
+
+.summary-card .studio-badges {
+  --badge-bg: var(--canvas);
+  --badge-fg: var(--btn-base);
+}
+
+.studio-badges__code {
+  margin-right: 4px;
+  padding: 2px 10px;
+  background: var(--region);
+  color: var(--canvas);
+  font: 500 12px/18px var(--font-body);
+}
+
+.studio-badges__icon {
+  display: grid;
+  padding: 4px;
+  border: 1px solid var(--badge-bg);
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+}
+
+/* ---------- Panel: "Map/Sidebar" (Pages=Default) ---------- */
+
+.sidebar {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* "Sidebar/Header": the count in Mozilla Text 40/30, the sort button on the right. */
+.sidebar__head {
+  flex: none;
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: baseline;
-  gap: 12px;
-  padding: 16px 16px 10px;
-  background: var(--paper);
-  border-bottom: 1px solid var(--line-soft);
+  gap: 16px;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--btn-base);
 }
 
-.panel-head h1 {
-  font-size: 20px;
+.sidebar__count {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
   margin: 0;
+  color: var(--btn-base);
 }
 
-.panel-head__count {
-  margin: 0;
-  font-size: 12px;
-  color: var(--ink-2);
-  white-space: nowrap;
+.sidebar__number {
+  font: 700 40px/30px var(--font-head);
+  letter-spacing: -0.8px;
+}
+
+.sidebar__shown {
+  width: 82px;
+  font: 400 12px/14px var(--font-body);
+  text-transform: uppercase;
+}
+
+.btn.sidebar__sort {
+  --btn-edge: 1px;
+  --btn-px: 12px;
+  gap: 6px;
+}
+
+/* Figma's "Scroll Bar": an ink thumb on paper. */
+.sidebar__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--btn-base) var(--canvas);
 }
 
 .studio-list {
   list-style: none;
   margin: 0;
-  padding: 12px 12px 0;
-  display: grid;
-  gap: 10px;
+  padding: 0;
 }
 
-/* Keep a row scrolled into view clear of the sticky list header. */
-.studio-row {
-  scroll-margin-top: 64px;
-  scroll-margin-bottom: 12px;
+/* Rows are divided by a text/secondary rule, inset 12px. */
+.studio-row + .studio-row::before {
+  content: '';
+  display: block;
+  height: 1px;
+  margin: 0 12px;
+  background: var(--text-secondary);
 }
 
-/* The row itself shows the studio on the map; "Direct" opens its page. */
+/* "Sidebar/Card": 8px region bar, 16px from the text. The card shows the studio on the
+   map and opens its summary card. */
 .studio-row__card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  border: 1.5px solid var(--line);
-  border-radius: var(--radius-tab);
-  background: var(--card);
-  transition: box-shadow 0.12s ease-out, transform 0.12s ease-out;
-}
-
-.studio-row__link {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 8px 10px;
-  padding: 12px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  padding: 16px 24px 16px 40px;
   border: 0;
-  border-radius: var(--radius-tab);
-  background: none;
+  background: var(--canvas);
+  color: var(--btn-base);
   font: inherit;
-  color: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.studio-row__direct {
-  margin: 12px 12px 0 0;
+.studio-row__card::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 20px;
+  width: 8px;
+  background: var(--region);
+}
+
+.studio-row__card:focus-visible {
+  outline-offset: -3px;
+}
+
+.studio-row__code {
+  padding: 2px 10px;
+  background: var(--region);
+  color: var(--canvas);
+  font: 500 12px/18px var(--font-body);
+}
+
+.studio-row__text {
+  display: flex;
+  flex-direction: column;
 }
 
 .studio-row__name {
-  font: 700 16px/1.25 var(--font-head);
+  font: 700 20px/30px var(--font-body);
 }
 
-.studio-row__meta {
-  grid-column: 1 / -1;
+.studio-row__cats {
+  font: 400 12px/18px var(--font-body);
+  color: var(--text-secondary);
+}
+
+.studio-row__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  font: 500 12px/18px var(--font-body);
+}
+
+/* Variant=Hover; also the row of the selected or hovered pin. */
+.studio-row.is-active .studio-row__card,
+.studio-row__card:hover {
+  background: var(--btn-base);
+  color: var(--canvas);
+}
+
+.studio-row.is-active .studio-row__cats,
+.studio-row__card:hover .studio-row__cats {
+  color: var(--text-border);
+}
+
+/* Pages=Previous: the short profile of the selected studio. The 92px top keeps the
+   panel button clear, as in Figma. */
+.sidebar-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 92px 24px 24px;
+}
+
+.sidebar-profile__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.sidebar-profile__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 600 12px/18px var(--font-body);
+  color: var(--btn-base);
+  cursor: pointer;
+}
+
+.sidebar-profile__back:hover {
+  color: var(--btn-hover);
+  text-decoration: underline;
+}
+
+.sidebar-profile__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-profile__text p {
+  margin: 0;
+  font: 400 12px/18px var(--font-body);
+  color: var(--text-secondary);
+}
+
+.sidebar-profile__name {
+  margin: 0;
+  font: 700 20px/30px var(--font-body);
+  color: var(--btn-base);
+}
+
+.btn.sidebar-profile__more {
+  --btn-pt: 12px;
+  --btn-pb: 12px;
+  --btn-px: 16px;
+}
+
+/* "Submission Tab": the chosen tab is ink, on an ink rule. */
+.sidebar-profile__tabs {
+  display: flex;
+  gap: 10px;
+  border-bottom: 1px solid var(--btn-base);
+}
+
+.sidebar-profile__tab {
+  padding: 6px 12px;
+  border: 0;
+  background: var(--canvas);
+  font: 500 12px/18px var(--font-body);
+  color: var(--btn-base);
+  cursor: pointer;
+}
+
+.sidebar-profile__tab[aria-selected='true'] {
+  background: var(--btn-base);
+  color: var(--canvas);
+}
+
+.sidebar-profile__tab:focus-visible {
+  outline-offset: -3px;
+}
+
+.sidebar-profile__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: -16px; /* 16px under the tabs */
+}
+
+.sidebar-profile__heading {
+  margin: 0;
+  font: 700 20px/30px var(--font-body);
+  color: var(--btn-base);
+}
+
+.sidebar-profile__tags {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.studio-row.is-active .studio-row__card {
-  box-shadow: 4px 4px 0 var(--ink);
-  transform: translate(-2px, -2px);
+.sidebar-profile .studio-page__note {
+  margin: 0;
+}
+
+.contact-card--compact {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+  padding: 16px;
+}
+
+.contact-card--compact .contact-card__item {
+  font: 400 14px/20px var(--font-body);
+}
+
+/* "Sidebar/CTA": the one button set in sentence case. */
+.sidebar__cta {
+  flex: none;
+  padding: 18px;
+  border-top: 1px solid var(--btn-base);
+}
+
+.sidebar__cta .btn {
+  text-transform: none;
 }
 
 .empty-state {
-  padding: 24px 16px;
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 24px 32px;
+}
+
+.empty-state p {
+  margin: 0;
 }
 
 /* ---------- Studio page ---------- */
@@ -3395,76 +3853,103 @@ button.tag-cat {
   font-size: 13px;
 }
 
-/* ---------- Mobile: map first, list in a bottom sheet (FR-14) ---------- */
+/* ---------- Tablet and mobile: the panel covers the map (Figma Size=sm) ---------- */
 
-.sheet {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 7;
-  display: flex;
-  flex-direction: column;
-  border-top: 1.5px solid var(--line);
-  border-radius: 14px 14px 0 0;
-  background: var(--paper);
-  box-shadow: 0 -6px 18px rgb(0 0 0 / 0.12);
-}
+@media (max-width: 1099px) {
+  /* The filter labels name the rows for screen readers only; the rows run to the edge. */
+  .map-filter {
+    padding-right: 24px;
+  }
 
-.sheet__handle-area {
-  flex: none;
-  touch-action: none;
-}
+  .map-filter__label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 
-.sheet__handle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  width: 100%;
-  min-height: var(--touch);
-  border: 0;
-  background: none;
-  color: var(--ink-2);
-  cursor: grab;
-}
+  .map-filter__tags {
+    margin-inline: -24px;
+    padding-inline: 24px;
+  }
 
-.sheet__grip {
-  width: 40px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--ink-2);
-}
+  /* A 40px strip under the map holds the "Tampilkan Panel" tab. */
+  .explore__main {
+    padding-bottom: 40px;
+    background: var(--canvas);
+  }
 
-.sheet__content {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
+  .panel {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 7;
+    width: auto;
+    padding-top: 20px;
+    border-left: 0;
+  }
 
-.sheet .panel-head {
-  padding-top: 4px;
-}
-
-@media (max-width: 899px) {
-  .legend {
-    top: 12px;
-    left: 12px;
+  .panel-toggle,
+  .explore.is-panel-open .panel-toggle {
+    top: auto;
     right: auto;
+    bottom: 20px;
+    left: 50%;
+    border: 0;
+    transform: translateX(-50%);
+  }
+
+  .explore.is-panel-open .panel-toggle {
+    top: 0;
     bottom: auto;
   }
 
-  .summary-card {
-    left: 12px;
-    right: 12px;
-    width: auto;
-    bottom: calc(var(--sheet-visible, 0px) + 12px);
+  .legend {
+    top: 10px;
+    left: 10px;
   }
 
-  .filter-bar {
-    padding: 6px 12px;
+  .map-type {
+    top: 10px;
+    right: 8px;
+  }
+
+  .map-type__label {
+    display: none;
+  }
+
+  .map-type__icon {
+    display: block;
+  }
+
+  .map-zoom {
+    left: auto;
+    right: 10px;
+    bottom: 10px;
+  }
+
+  /* Bottom left, clear of the zoom tools and of the panel tab. */
+  .map-attribution {
+    right: auto;
+    bottom: 24px;
+    left: 4px;
+  }
+
+  /* CardPreview Size=sm: 208px, bottom left, 16px inside. */
+  .summary-card {
+    left: 10px;
+    right: auto;
+    bottom: 10px;
+    width: 208px;
+    padding: 15px;
+  }
+
+  .sidebar-profile {
+    padding-top: 24px;
   }
 }
 
@@ -3472,15 +3957,8 @@ button.tag-cat {
   .btn,
   button.tag,
   button.tag-cat,
-  .filter-bar__clear,
-  .panel-toggle,
-  .legend summary {
+  button.tag-region {
     min-height: var(--touch);
-  }
-
-  .maplibregl-ctrl-group button {
-    width: var(--touch);
-    height: var(--touch);
   }
 }
 

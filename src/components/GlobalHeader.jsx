@@ -19,8 +19,9 @@ const MENU_LINKS = [...LINKS, { to: '/daftar', label: t.nav.submitShort }]
  * (current page in ink, others muted) and the primary call to action.
  * Below 728px (Size=sm-1): logo and a menu button. Open, the menu drops below the bar
  * as full-width outlined links (State=Open), over the page rather than pushing it down.
- * `search` (props for SearchField) adds SearchBar=True: in the bar on wide screens,
- * at the top of the open menu on phones.
+ * `search` (props for SearchField) adds SearchBar=True: in the bar from 1100px; below
+ * that the bar has no room for it, so the header takes the menu form at any width
+ * and the search sits at the top of the open menu.
  */
 export default function GlobalHeader({ search }) {
   const headerRef = useRef(null)
@@ -50,23 +51,23 @@ export default function GlobalHeader({ search }) {
   }, [open])
 
   return (
-    <header ref={headerRef} className="global-header">
+    <header ref={headerRef} className={`global-header ${search ? 'global-header--search' : ''}`}>
       <div className="global-header__bar">
         <NavLink to="/" className="global-header__brand" aria-label={`${t.siteName}, ${t.siteTagline}`}>
-          <img src={logo} alt="" width="152" height="32" />
+          <img src={logo} alt="" width="133" height="28" />
         </NavLink>
 
-        {search && <SearchField className="global-header__search" {...search} />}
+        {search && <SearchField size="sm" className="global-header__search" {...search} />}
 
         <nav aria-label={t.nav.main} className="global-nav">
           <div className="global-nav__links">
             {LINKS.map((l) => (
-              <Button key={l.to} as={NavLink} to={l.to} end={l.end} variant="link" size="xl" className="global-nav__link">
+              <Button key={l.to} as={NavLink} to={l.to} end={l.end} variant="link" size="lg" className="global-nav__link">
                 {l.label}
               </Button>
             ))}
           </div>
-          <Button as={NavLink} to="/daftar" size="xl" icon={ArrowUpRight}>
+          <Button as={NavLink} to="/daftar" size="lg" icon={ArrowUpRight}>
             {t.nav.submit}
           </Button>
         </nav>

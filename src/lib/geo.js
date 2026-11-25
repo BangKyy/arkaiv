@@ -1,8 +1,14 @@
 // Small geometry helpers, shared by the app and the data-check script.
 
-/** Ray-casting point-in-polygon for a GeoJSON Polygon (outer ring only). */
-export function pointInPolygon([x, y], polygon) {
-  const ring = polygon.coordinates[0]
+/** Ray-casting point-in-polygon for a GeoJSON Polygon or MultiPolygon (outer rings only). */
+export function pointInPolygon(point, geometry) {
+  if (geometry.type === 'MultiPolygon') {
+    return geometry.coordinates.some((rings) => inRing(point, rings[0]))
+  }
+  return inRing(point, geometry.coordinates[0])
+}
+
+function inRing([x, y], ring) {
   let inside = false
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
     const [xi, yi] = ring[i]

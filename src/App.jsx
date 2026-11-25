@@ -10,7 +10,7 @@ import StudioProfile from './pages/StudioProfile'
 import About from './pages/About'
 import Submit from './pages/Submit'
 import NotFound from './pages/NotFound'
-import { isSample } from './lib/studios'
+import { useDirectory } from './state/directory'
 import t from './i18n/id'
 
 // Admins only, so visitors never download it.
@@ -61,8 +61,7 @@ function Shell() {
           <a className="skip-link" href="#main">
             Lewati ke konten
           </a>
-          <GlobalHeader />
-          {isSample && <p className="sample-banner">{t.sampleBanner}</p>}
+          {isExplore ? <ExploreHeader /> : <GlobalHeader />}
           <main id="main" className={isExplore ? 'main main--explore' : 'main main--page'}>
             <Outlet />
             {!isExplore && <GlobalFooter />}
@@ -70,5 +69,20 @@ function Shell() {
         </div>
       </DirectoryProvider>
     </MotionConfig>
+  )
+}
+
+/** The map page's header carries the studio search (Figma SearchBar=True). */
+function ExploreHeader() {
+  const { filters, setQuery } = useDirectory()
+  return (
+    <GlobalHeader
+      search={{
+        value: filters.query,
+        onChange: (e) => setQuery(e.target.value),
+        placeholder: t.search.placeholder,
+        'aria-label': t.search.label,
+      }}
+    />
   )
 }

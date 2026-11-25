@@ -11,6 +11,9 @@ export const getCategory = (id) => categoryById.get(id)
 export const getArea = (id) => areaById.get(id)
 export const categoryName = (id) => categoryById.get(id)?.name ?? id
 
+/** "Branding · UI/UX": a studio's categories as one line. */
+export const categoryLine = (studio) => studio.categories.map(categoryName).join(' · ')
+
 /** "P-SUB-01" -> "P-SUB 01" (the book's label style). */
 export const formatCode = (code) => (code ? code.replace(/-(\d+)$/, ' $1') : '')
 

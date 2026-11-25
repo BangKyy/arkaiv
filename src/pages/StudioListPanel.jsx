@@ -1,64 +1,207 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { Link, useOutletContext } from 'react-router'
 import { AnimatePresence, motion } from 'motion/react'
 import { useDirectory } from '../state/directory'
-import { AreaTag, CategoryChips, CodeTab } from '../components/StudioBits'
-import { usePageMeta } from '../lib/hooks'
+import { categoryLine, getArea } from '../lib/catalog'
 import { track } from '../lib/analytics'
 import Button from '../components/Button'
-import GlobalFooter from '../components/GlobalFooter'
-import { ArrowUpRight } from '../components/icons'
+import StudioContact from '../components/StudioContact'
+import { StudioBadges } from '../components/StudioBits'
+import { Tag, TagCategory } from '../components/Tags'
+import { ArrowLeft, ArrowUpRight, SortAscending, SortDescending } from '../components/icons'
 import t from '../i18n/id'
 
+const collator = new Intl.Collator('id', { sensitivity: 'base', numeric: true })
+
 /**
- * FR-06 / US-05: the same studios as the map, as a scannable A-Z list. A row shows its
- * studio on the map; its "Direct" button opens the studio's page.
+ * Figma "Map/Sidebar", FR-06 / US-05. Pages=Default: the same studios as the map as a
+ * scannable list, sorted by name. Pages=Previous: the short profile of the studio
+ * selected on the map or in the list, with a way back to the list.
  */
 export default function StudioListPanel() {
-  const { visible, studios, clearFilters } = useDirectory()
-  usePageMeta(t.nav.explore)
+  const { visible, clearFilters, bySlug, selectedSlug } = useDirectory()
+  const [desc, setDesc] = useState(false)
+  // Set when a list card opens the profile, so focus follows into it.
+  const focusProfile = useRef(false)
+
+  const sorted = useMemo(() => {
+    const list = [...visible].sort((a, b) => collator.compare(a.name, b.name))
+    return desc ? list.reverse() : list
+  }, [visible, desc])
+
+  const selected = selectedSlug ? bySlug.get(selectedSlug) : null
 
   return (
-    <>
-      <section className="panel-section" aria-labelledby="list-heading">
-        <header className="panel-head">
-          <h1 id="list-heading" tabIndex={-1}>
-            {t.list.heading}
-          </h1>
-          <p className="panel-head__count" aria-live="polite">
-            {t.list.count(visible.length, studios.length)}
-          </p>
-        </header>
-
-        {visible.length === 0 ? (
-          <div className="empty-state" role="status">
-            <p>{t.list.empty}</p>
-            <Button variant="outlined" onClick={clearFilters}>
-              {t.filter.clear}
+    <section className="sidebar" aria-labelledby="list-heading">
+      <h2 id="list-heading" className="visually-hidden">
+        {t.list.heading}
+      </h2>
+      {selected ? (
+        <div className="sidebar__body">
+          <ShortProfile key={selected.slug} studio={selected} focusRef={focusProfile} />
+        </div>
+      ) : (
+        <>
+          <header className="sidebar__head">
+            <p className="sidebar__count" aria-live="polite">
+              <span className="sidebar__number">{visible.length}</span>
+              <span className="sidebar__shown">{t.list.shown}</span>
+            </p>
+            <Button
+              variant="outlined"
+              size="lg"
+              icon={desc ? SortAscending : SortDescending}
+              iconPosition="left"
+              className="sidebar__sort"
+              onClick={() => setDesc((d) => !d)}
+            >
+              <span className="visually-hidden">{t.list.sortLabel} </span>
+              {desc ? t.list.sortZa : t.list.sortAz}
             </Button>
+          </header>
+
+          <div className="sidebar__body">
+            {sorted.length === 0 ? (
+              <div className="empty-state" role="status">
+                <p>{t.list.empty}</p>
+                <Button variant="outlined" size="sm" onClick={clearFilters}>
+                  {t.filter.clear}
+                </Button>
+              </div>
+            ) : (
+              <ol className="studio-list">
+                <AnimatePresence initial={false}>
+                  {sorted.map((s) => (
+                    <StudioRow key={s.slug} studio={s} focusRef={focusProfile} />
+                  ))}
+                </AnimatePresence>
+              </ol>
+            )}
           </div>
-        ) : (
-          <ol className="studio-list">
-            <AnimatePresence initial={false}>
-              {visible.map((s) => (
-                <StudioRow key={s.slug} studio={s} />
-              ))}
-            </AnimatePresence>
-          </ol>
-        )}
-      </section>
-      {/* The map fills the screen, so the site footer closes the list instead. */}
-      <GlobalFooter size="sm" />
-    </>
+        </>
+      )}
+
+      <footer className="sidebar__cta">
+        <Button as={Link} to="/daftar" size="sm" icon={ArrowUpRight}>
+          {t.list.cta}
+        </Button>
+      </footer>
+    </section>
   )
 }
 
-function StudioRow({ studio }) {
+const TABS = ['specialty', 'contact']
+
+/** Figma "Map/Sidebar" Pages=Previous: badges, name, line, and Spesialisasi / Kontak tabs. */
+function ShortProfile({ studio, focusRef }) {
+  const { setSelectedSlug } = useDirectory()
+  const [tab, setTab] = useState('specialty')
+  const backRef = useRef(null)
+  const id = useId()
+
+  useEffect(() => {
+    if (!focusRef.current) return
+    focusRef.current = false
+    backRef.current?.focus({ preventScroll: true })
+  }, [focusRef])
+
+  // Arrow keys move between the tabs (WAI-ARIA tabs pattern).
+  const onTabKey = (e) => {
+    const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key]
+    if (!step) return
+    const next = TABS[(TABS.indexOf(tab) + step + TABS.length) % TABS.length]
+    setTab(next)
+    document.getElementById(`${id}-${next}`)?.focus()
+  }
+
+  return (
+    <article className="sidebar-profile" aria-labelledby={`${id}-name`}>
+      <div className="sidebar-profile__intro">
+        <button
+          ref={backRef}
+          type="button"
+          className="sidebar-profile__back"
+          onClick={() => setSelectedSlug(null)}
+        >
+          <ArrowLeft size={14} aria-hidden="true" />
+          {t.list.back}
+        </button>
+        <StudioBadges studio={studio} />
+        <div className="sidebar-profile__text">
+          <p className="sidebar-profile__cats">{categoryLine(studio)}</p>
+          <h3 id={`${id}-name`} className="sidebar-profile__name">
+            {studio.name}
+          </h3>
+          <p className="sidebar-profile__line">{studio.description}</p>
+        </div>
+        <Button
+          as={Link}
+          to={`/studio/${studio.slug}`}
+          icon={ArrowUpRight}
+          className="sidebar-profile__more"
+          onClick={() => track('direct_click', { studio: studio.slug })}
+        >
+          {t.list.more}
+        </Button>
+      </div>
+
+      <div className="sidebar-profile__tabs" role="tablist" aria-label={studio.name}>
+        {TABS.map((key) => (
+          <button
+            key={key}
+            id={`${id}-${key}`}
+            type="button"
+            role="tab"
+            className="sidebar-profile__tab"
+            aria-selected={tab === key}
+            aria-controls={`${id}-${key}-panel`}
+            tabIndex={tab === key ? 0 : -1}
+            onClick={() => setTab(key)}
+            onKeyDown={onTabKey}
+          >
+            {t.profile.sections[key]}
+          </button>
+        ))}
+      </div>
+      <div
+        id={`${id}-${tab}-panel`}
+        role="tabpanel"
+        aria-labelledby={`${id}-${tab}`}
+        className="sidebar-profile__panel"
+      >
+        <h4 className="sidebar-profile__heading">{t.profile.sections[tab]}</h4>
+        {tab === 'specialty' ? (
+          <>
+            <ul className="sidebar-profile__tags">
+              {studio.categories.map((c) => (
+                <li key={c}>
+                  <TagCategory category={c} variant="netral" />
+                </li>
+              ))}
+              {studio.specialties?.map((tag) => (
+                <li key={tag}>
+                  <Tag label={tag} />
+                </li>
+              ))}
+            </ul>
+            <p className="studio-page__note">{t.profile.specialtyNote}</p>
+          </>
+        ) : (
+          <StudioContact studio={studio} className="contact-card--compact" />
+        )}
+      </div>
+    </article>
+  )
+}
+
+/** Figma "Sidebar/Card": region bar and code, name, categories, "Lihat profil singkat". */
+function StudioRow({ studio, focusRef }) {
   const { hoveredSlug, setHoveredSlug, selectedSlug } = useDirectory()
   const { showOnMap } = useOutletContext()
   const ref = useRef(null)
   const selected = selectedSlug === studio.slug
   const active = selected || hoveredSlug === studio.slug
+  const area = getArea(studio.area)
 
   // Selecting a pin brings its row into view (FR-06 "and vice versa").
   useEffect(() => {
@@ -74,40 +217,39 @@ function StudioRow({ studio }) {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
       className={`studio-row ${active ? 'is-active' : ''}`}
+      style={{ '--region': `var(--region-${studio.area})` }}
     >
-      <div className="studio-row__card">
-        <button
-          type="button"
-          className="studio-row__link"
-          onMouseEnter={() => setHoveredSlug(studio.slug)}
-          onMouseLeave={() => setHoveredSlug(null)}
-          onFocus={() => setHoveredSlug(studio.slug)}
-          onBlur={() => setHoveredSlug(null)}
-          onClick={() => {
-            showOnMap(studio.slug)
-            track('list_click', { studio: studio.slug })
-          }}
-        >
-          <CodeTab studio={studio} />
-          <span className="studio-row__name">{studio.name}</span>
-          <span className="studio-row__meta">
-            <CategoryChips ids={studio.categories} primary={studio.primaryCategory} />
-            <AreaTag id={studio.area} compact />
+      <button
+        type="button"
+        className="studio-row__card"
+        aria-expanded={selected}
+        onMouseEnter={() => setHoveredSlug(studio.slug)}
+        onMouseLeave={() => setHoveredSlug(null)}
+        onFocus={() => setHoveredSlug(studio.slug)}
+        onBlur={() => setHoveredSlug(null)}
+        onClick={() => {
+          // The card is replaced by the profile, so it never gets its mouseleave.
+          setHoveredSlug(null)
+          focusRef.current = true
+          showOnMap(studio.slug)
+          track('list_click', { studio: studio.slug })
+        }}
+      >
+        {area && (
+          <span className="studio-row__code">
+            <span className="visually-hidden">{area.name}, </span>
+            {area.code}
           </span>
-        </button>
-        <Button
-          as={Link}
-          to={`/studio/${studio.slug}`}
-          variant="outlined"
-          size="sm"
-          icon={ArrowUpRight}
-          className="studio-row__direct"
-          onClick={() => track('direct_click', { studio: studio.slug })}
-        >
-          {t.profile.direct}
-          <span className="visually-hidden">: {t.profile.directLabel(studio.name)}</span>
-        </Button>
-      </div>
+        )}
+        <span className="studio-row__text">
+          <span className="studio-row__name">{studio.name}</span>
+          <span className="studio-row__cats">{categoryLine(studio)}</span>
+        </span>
+        <span className="studio-row__more">
+          {t.list.shortProfile}
+          <ArrowUpRight size={14} aria-hidden="true" />
+        </span>
+      </button>
     </motion.li>
   )
 }

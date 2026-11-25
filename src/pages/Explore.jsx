@@ -1,125 +1,117 @@
-import { Suspense, lazy, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, lazy, useRef, useState } from 'react'
 import { useOutlet } from 'react-router'
 import { AnimatePresence, motion } from 'motion/react'
 import { useDirectory } from '../state/directory'
-import CategoryFilter from '../components/CategoryFilter'
+import MapFilter from '../components/MapFilter'
 import Legend from '../components/Legend'
 import MapBoundary from '../components/MapBoundary'
 import SummaryCard from '../components/SummaryCard'
-import BottomSheet from '../components/BottomSheet'
-import { snapHeights } from '../components/sheet'
-import { SidebarSimple } from '../components/icons'
-import { MOBILE_QUERY, useMediaQuery } from '../lib/hooks'
+import { CaretLineDown, CaretLineLeft, CaretLineRight, CaretLineUp } from '../components/icons'
+import { MOBILE_QUERY, useMediaQuery, usePageMeta } from '../lib/hooks'
 import t from '../i18n/id'
 
 // MapLibre is the largest dependency. Loading it in its own chunk lets the header,
 // filters and studio list paint first; the map follows (PRD performance targets).
 const StudioMap = lazy(() => import('../components/StudioMap'))
 
+const DESKTOP_PADDING = { top: 96, left: 48, right: 48, bottom: 48 }
+const MOBILE_PADDING = { top: 72, left: 24, right: 24, bottom: 24 }
+
 /**
- * Explore (home): the map with the studio list in a side panel (desktop) or bottom
- * sheet (mobile). Map-first: nothing sits in front of the map except the slim header
- * and the filters (PRD section 9). Profiles are pages of their own (/studio/:slug).
+ * Figma "Pages/Jelajahi Map": the filters over the map, and the studio list in
+ * "Map/Sidebar", closed until asked for. From 1100px the panel is a column on the
+ * right; below that it covers the filters and map, opened from the tab at the bottom.
+ * Profiles are pages of their own (/studio/:slug).
  */
 export default function Explore() {
   const { bySlug, selectedSlug, setSelectedSlug } = useDirectory()
   const isMobile = useMediaQuery(MOBILE_QUERY)
-
-  const [panelOpen, setPanelOpen] = useState(true)
-  const [snap, setSnap] = useState('peek')
+  const [panelOpen, setPanelOpen] = useState(false)
   // The studio the map last flew to after a pick in the list.
   const [focusSlug, setFocusSlug] = useState(null)
-  const bodyRef = useRef(null)
-  const panelRef = useRef(null)
-  const [areaHeight, setAreaHeight] = useState(600)
+  const toggleRef = useRef(null)
+  usePageMeta(t.nav.explore)
 
-  useLayoutEffect(() => {
-    const el = bodyRef.current
-    if (!el) return undefined
-    const ro = new ResizeObserver(([entry]) => setAreaHeight(entry.contentRect.height))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-
-  // A pick in the list selects the studio and centers the map on it; on phones the
-  // sheet drops so the pin and its summary card are in view.
+  // A pick in the list selects the studio and centers the map on it; where the panel
+  // covers the map it closes, so the pin and its summary card are in view.
   const showOnMap = (slug) => {
     setSelectedSlug(slug)
     setFocusSlug(slug)
-    if (isMobile) setSnap('peek')
+    if (isMobile) setPanelOpen(false)
   }
   const outlet = useOutlet({ showOnMap })
-
-  const sheetVisible = isMobile ? snapHeights(areaHeight)[snap] : 0
-  const mapPadding = useMemo(
-    () =>
-      isMobile
-        ? { top: 24, left: 24, right: 24, bottom: sheetVisible + 24 }
-        : { top: 48, left: 48, right: 48, bottom: 48 },
-    [isMobile, sheetVisible],
-  )
 
   const selected = selectedSlug ? bySlug.get(selectedSlug) : null
   // Closing the card or picking another pin ends the list's focus request.
   const mapFocus = focusSlug === selectedSlug ? focusSlug : null
 
-  const panelContent = (
-    <motion.div
-      className="panel__inner"
-      initial={{ opacity: 0, x: isMobile ? 0 : -8 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-    >
-      {outlet}
-    </motion.div>
-  )
+  const ToggleIcon = isMobile
+    ? panelOpen
+      ? CaretLineDown
+      : CaretLineUp
+    : panelOpen
+      ? CaretLineRight
+      : CaretLineLeft
 
   return (
-    <div className="explore" style={{ '--sheet-visible': `${sheetVisible}px` }}>
-      <CategoryFilter />
-      <div className="explore__body" ref={bodyRef}>
-        {!isMobile && (
-          <aside
-            id="studio-panel"
-            ref={panelRef}
-            className={`panel ${panelOpen ? '' : 'is-collapsed'}`}
-            aria-label={t.list.panelToggle}
-            hidden={!panelOpen}
-          >
-            {panelContent}
-          </aside>
-        )}
-
+    <div className={`explore ${panelOpen ? 'is-panel-open' : ''}`}>
+      <h1 className="visually-hidden">{t.nav.explore}</h1>
+      <div className="explore__main">
+        <MapFilter />
         <div className="explore__map">
           <MapBoundary>
             <Suspense fallback={<div className="map-wrap map" aria-busy="true" />}>
-              <StudioMap focusSlug={mapFocus} padding={mapPadding} />
+              <StudioMap
+                focusSlug={mapFocus}
+                padding={isMobile ? MOBILE_PADDING : DESKTOP_PADDING}
+              />
             </Suspense>
           </MapBoundary>
-          {!isMobile && (
-            <button
-              type="button"
-              className="panel-toggle"
-              aria-controls="studio-panel"
-              aria-expanded={panelOpen}
-              onClick={() => setPanelOpen((o) => !o)}
-            >
-              <SidebarSimple size={18} weight="bold" aria-hidden="true" />
-              <span>{panelOpen ? t.list.collapse : t.list.expand}</span>
-            </button>
-          )}
           <Legend />
           <AnimatePresence>
-            {selected && <SummaryCard key={selected.slug} studio={selected} />}
+            {/* With the panel open the selected studio shows there as a short profile;
+                the card on the map is for when the panel is closed. */}
+            {selected && !panelOpen && <SummaryCard key={selected.slug} studio={selected} />}
           </AnimatePresence>
         </div>
-
-        {isMobile && (
-          <BottomSheet areaHeight={areaHeight} snap={snap} onSnap={setSnap} contentRef={panelRef}>
-            {panelContent}
-          </BottomSheet>
-        )}
       </div>
+
+      <AnimatePresence initial={false}>
+        {panelOpen && (
+          <motion.aside
+            key="panel"
+            id="studio-panel"
+            className="panel"
+            aria-label={t.list.panelToggle}
+            initial={isMobile ? { y: 32, opacity: 0 } : { x: 16, opacity: 0 }}
+            animate={{ x: 0, y: 0, opacity: 1 }}
+            exit={isMobile ? { y: 32, opacity: 0 } : { opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            onKeyDown={(e) => {
+              if (e.key !== 'Escape' || !isMobile) return
+              setPanelOpen(false)
+              toggleRef.current?.focus()
+            }}
+          >
+            {outlet}
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
+      {/* Figma "Sidebar/ShowPanel": on desktop the word shows on hover or focus. */}
+      <button
+        ref={toggleRef}
+        type="button"
+        className="panel-toggle"
+        aria-controls="studio-panel"
+        aria-expanded={panelOpen}
+        onClick={() => setPanelOpen((o) => !o)}
+      >
+        <span className="panel-toggle__label">{panelOpen ? t.list.hide : t.list.show}</span>
+        <span className="panel-toggle__icon">
+          <ToggleIcon size={16} aria-hidden="true" />
+        </span>
+      </button>
     </div>
   )
 }

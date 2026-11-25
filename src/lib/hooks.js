@@ -22,7 +22,8 @@ export function useMediaQuery(query) {
   )
 }
 
-export const MOBILE_QUERY = '(max-width: 899px)'
+/** Below desktop (Figma Tablet and Mobile): the map page's panel covers the map. */
+export const MOBILE_QUERY = '(max-width: 1099px)'
 
 export const formatDate = (iso) =>
   iso

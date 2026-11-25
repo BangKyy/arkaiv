@@ -76,17 +76,27 @@ export function TagCategory({
  * Region tag ("Tag/Category" with Region=...): area code chip + area name.
  * Variant: 'white' (paper box, region-colored chip), 'initial-black' or 'initial-white'
  * (region-colored box with an ink or paper chip). `bordered={false}` drops the outline.
+ * As a pressed toggle (`as="button"`, aria-pressed) the white variant turns initial-white.
  */
-export function RegionTag({ id, variant = 'white', bordered = true, className = '' }) {
+export function RegionTag({
+  as: Component = 'span',
+  id,
+  variant = 'white',
+  bordered = true,
+  className = '',
+  ...rest
+}) {
   const area = getArea(id)
   if (!area) return null
+  if (Component === 'button' && rest.type === undefined) rest.type = 'button'
   return (
-    <span
+    <Component
       className={`tag-region tag-region--${variant} ${bordered ? 'tag-region--bordered' : ''} ${className}`}
       style={{ '--region': `var(--region-${id})` }}
+      {...rest}
     >
       <span className="tag-region__code">{area.code}</span>
       <span className="tag-region__name">{area.name}</span>
-    </span>
+    </Component>
   )
 }

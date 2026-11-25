@@ -1199,7 +1199,8 @@ img {
   margin-bottom: -0.15em;
 }
 
-/* Desktop sets the city in Doto, like the cover. */
+/* The accent words ("Surabaya.", "Data Studio.") are set in Doto, like the cover, on
+   every screen size. */
 .about__title-accent {
   font-family: var(--font-accent);
   font-weight: 900;
@@ -1333,11 +1334,6 @@ img {
     letter-spacing: 0;
   }
 
-  .about__title-accent {
-    font-family: inherit;
-    font-weight: inherit;
-  }
-
   .about__lede {
     font-size: 18px;
     line-height: 28px;
@@ -1409,8 +1405,8 @@ img {
 }
 
 /* Figma "Pages/Studio Regist Pages": the About hero and step boxes, around the "Form"
-   organism. Unlike About, the title keeps Doto on every size, the eyebrow stays 16px,
-   and the review section keeps 100px of air on phones. */
+   organism. Unlike About, the eyebrow stays 16px and the review section keeps 100px of
+   air on phones. */
 .submit__form {
   padding-top: 10px;
   border-top: 1px solid var(--btn-base);
@@ -1427,13 +1423,6 @@ img {
 
 .submit__process {
   padding-block: 100px;
-}
-
-@media (max-width: 1099px) {
-  .about--submit .about__title-accent {
-    font-family: var(--font-accent);
-    font-weight: 900;
-  }
 }
 
 @media (max-width: 727px) {
@@ -2722,13 +2711,50 @@ button.tag-region {
 /* Desktop: "Map/Sidebar" Size=lg, a 330px column beside the filters and map
    (its width in "Map-Trigger"). */
 .panel {
-  position: relative;
-  z-index: 2;
-  flex: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
   width: 330px;
-  min-height: 0;
   border-left: 1px solid var(--btn-base);
   background: var(--canvas);
+}
+
+/* The panel lies over the map's right side rather than beside it (Explore slides it in
+   and eases the map's view over), so what the panel covers moves aside with it, on the
+   panel's own curve and timing (PANEL_MOTION in Explore). */
+.explore {
+  --panel-motion: 0.55s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.map-filter {
+  transition: padding-right var(--panel-motion);
+}
+
+.explore.is-panel-open .map-filter {
+  padding-right: calc(330px + 64px);
+}
+
+.map-type,
+.map-attribution {
+  transition: right var(--panel-motion);
+}
+
+.explore.is-panel-open .map-type {
+  right: calc(330px + 30px);
+}
+
+.explore.is-panel-open .map-attribution {
+  right: calc(330px + 4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-filter,
+  .map-type,
+  .map-attribution {
+    transition: none;
+  }
 }
 
 /* Figma "Sidebar/ShowPanel": ink box, the caret in an outlined square. */
@@ -2739,7 +2765,6 @@ button.tag-region {
   z-index: 8;
   display: inline-flex;
   align-items: center;
-  gap: 12px;
   padding: 7px; /* 40px square with its outline, as in Figma */
   border: 1px solid var(--canvas);
   background: var(--btn-base);
@@ -2749,25 +2774,58 @@ button.tag-region {
   cursor: pointer;
 }
 
+/* The words sit in a track that can fold to nothing (desktop, below); the 12px gap to
+   the icon is part of the text (not padding, which a folded track cannot squeeze), so
+   it folds away too. */
+.panel-toggle__label {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.panel-toggle__label-text {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.panel-toggle__label-text::after {
+  content: '';
+  display: inline-block;
+  width: 12px;
+}
+
 .panel-toggle__icon {
   display: grid;
   padding: 4px;
   border: 1px solid var(--canvas);
 }
 
-/* Open, it straddles the panel's edge (Figma left: -20px). */
-.explore.is-panel-open .panel-toggle {
-  right: 310px;
+@media (min-width: 1100px) {
+  /* State=Hover: the words slide open from the icon and fade in, and fold away again
+     after. Folded, they stay in the page for screen readers. */
+  .panel-toggle__label {
+    grid-template-columns: 0fr;
+    transition: grid-template-columns 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .panel-toggle__label-text {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .panel-toggle:is(:hover, :focus-visible) .panel-toggle__label {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-toggle:is(:hover, :focus-visible) .panel-toggle__label-text {
+    opacity: 1;
+    transition: opacity 0.3s ease 0.1s;
+  }
 }
 
-@media (min-width: 1100px) {
-  /* State=Hover shows the words; otherwise they are for screen readers only. */
-  .panel-toggle:not(:hover, :focus-visible) .panel-toggle__label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
+@media (prefers-reduced-motion: reduce) {
+  .panel-toggle__label,
+  .panel-toggle__label-text {
+    transition: none;
   }
 }
 
@@ -4331,14 +4389,31 @@ button.tag-region {
     border-left: 0;
   }
 
+  /* The panel covers the whole map here: nothing moves aside (the same values as
+     below, which the desktop rules for the open panel would otherwise beat). */
+  .explore.is-panel-open .map-filter {
+    padding-right: 24px;
+  }
+
+  .explore.is-panel-open .map-type {
+    right: 8px;
+  }
+
+  .explore.is-panel-open .map-attribution {
+    right: auto;
+  }
+
+  /* Centered by margins, not a transform: the button's glide between the tab and the
+     top of the panel (Motion `layout`) needs the transform for itself. */
   .panel-toggle,
   .explore.is-panel-open .panel-toggle {
     top: auto;
-    right: auto;
+    right: 0;
     bottom: 20px;
-    left: 50%;
+    left: 0;
+    width: max-content;
+    margin-inline: auto;
     border: 0;
-    transform: translateX(-50%);
   }
 
   .explore.is-panel-open .panel-toggle {

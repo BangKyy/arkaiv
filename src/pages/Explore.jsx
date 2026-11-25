@@ -1,6 +1,6 @@
 import { Suspense, lazy, useRef, useState } from 'react'
 import { useOutlet } from 'react-router'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { useDirectory } from '../state/directory'
 import MapFilter from '../components/MapFilter'
 import Legend from '../components/Legend'
@@ -19,6 +19,26 @@ const StudioMap = lazy(() => import('../components/StudioMap'))
 const DESKTOP_PADDING = { top: 96, left: 48, right: 48, bottom: 48 }
 const MOBILE_PADDING = { top: 72, left: 24, right: 24, bottom: 24 }
 
+// The panel, its button, the map's view and the tools beside it all move as one: the
+// same duration and ease-in-out curve (CSS uses it too, see .explore in index.css).
+const PANEL_WIDTH = 330
+// Open, the button straddles the panel's edge by this much (Figma left: -20px).
+const TOGGLE_OVERLAP = 20
+const PANEL_MOTION = { duration: 0.55, ease: [0.65, 0, 0.35, 1] }
+// Desktop: the column slides in over the map's right side while the map's view eases
+// left by the same amount (StudioMap `inset`), so nothing is squeezed or redrawn at a
+// new size. Below 1100px: the panel is a sheet that slides up over the map.
+const panelStates = {
+  desktop: {
+    closed: { x: '100%' },
+    open: { x: '0%' },
+  },
+  mobile: {
+    closed: { y: '100%' },
+    open: { y: '0%' },
+  },
+}
+
 /**
  * Figma "Pages/Jelajahi Map": the filters over the map, and the studio list in
  * "Map/Sidebar", closed until asked for. From 1100px the panel is a column on the
@@ -28,6 +48,9 @@ const MOBILE_PADDING = { top: 72, left: 24, right: 24, bottom: 24 }
 export default function Explore() {
   const { bySlug, selectedSlug, setSelectedSlug } = useDirectory()
   const isMobile = useMediaQuery(MOBILE_QUERY)
+  // The map's view moves outside Motion, so reduced motion is honored here for all of it.
+  const reduceMotion = useReducedMotion()
+  const panelMotion = reduceMotion ? { duration: 0 } : PANEL_MOTION
   const [panelOpen, setPanelOpen] = useState(false)
   // The studio the map last flew to after a pick in the list.
   const [focusSlug, setFocusSlug] = useState(null)
@@ -75,6 +98,8 @@ export default function Explore() {
               <StudioMap
                 focusSlug={mapFocus}
                 padding={isMobile ? MOBILE_PADDING : DESKTOP_PADDING}
+                inset={panelOpen && !isMobile ? PANEL_WIDTH : 0}
+                insetMotion={panelMotion}
               />
             </Suspense>
           </MapBoundary>
@@ -94,10 +119,11 @@ export default function Explore() {
             id="studio-panel"
             className="panel"
             aria-label={t.list.panelToggle}
-            initial={isMobile ? { y: 32, opacity: 0 } : { x: 16, opacity: 0 }}
-            animate={{ x: 0, y: 0, opacity: 1 }}
-            exit={isMobile ? { y: 32, opacity: 0 } : { opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            variants={panelStates[isMobile ? 'mobile' : 'desktop']}
+            initial="closed"
+            animate="open"
+            exit="closed"
+            transition={panelMotion}
             onKeyDown={(e) => {
               if (e.key !== 'Escape' || !isMobile) return
               setPanelOpen(false)
@@ -109,21 +135,30 @@ export default function Explore() {
         )}
       </AnimatePresence>
 
-      {/* Figma "Sidebar/ShowPanel": on desktop the word shows on hover or focus. */}
-      <button
+      {/* Figma "Sidebar/ShowPanel": on desktop the words slide open on hover or focus.
+          Desktop: the button rides the panel's edge, on the panel's own transition, so
+          the two start in the same frame. Below 1100px it travels from the tab to the
+          top of the sheet: `layout` glides it there (Smart Animate), "position" keeping
+          its size out of it so nothing stretches. */}
+      <motion.button
         ref={toggleRef}
         type="button"
         className="panel-toggle"
         data-intro="rise"
+        layout={isMobile ? 'position' : false}
+        animate={{ x: panelOpen && !isMobile ? -(PANEL_WIDTH - TOGGLE_OVERLAP) : 0 }}
+        transition={isMobile ? { layout: panelMotion, x: { duration: 0 } } : panelMotion}
         aria-controls="studio-panel"
         aria-expanded={panelOpen}
         onClick={() => setPanelOpen((o) => !o)}
       >
-        <span className="panel-toggle__label">{panelOpen ? t.list.hide : t.list.show}</span>
+        <span className="panel-toggle__label">
+          <span className="panel-toggle__label-text">{panelOpen ? t.list.hide : t.list.show}</span>
+        </span>
         <span className="panel-toggle__icon">
           <ToggleIcon size={16} aria-hidden="true" />
         </span>
-      </button>
+      </motion.button>
     </div>
   )
 }

@@ -55,6 +55,22 @@ const REGION_COLOR = ['match', ['get', 'id'], 'pusat', '#0e733b', 'utara', '#8d3
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
+/** A CSS-style cubic-bezier easing for MapLibre camera moves (time 0..1 to progress). */
+function cubicBezier(x1, y1, x2, y2) {
+  const at = (a, b, t) => 3 * a * t * (1 - t) ** 2 + 3 * b * t ** 2 * (1 - t) + t ** 3
+  return (x) => {
+    // Find the curve's t for this x by bisection, then read its y.
+    let lo = 0
+    let hi = 1
+    for (let i = 0; i < 24; i++) {
+      const mid = (lo + hi) / 2
+      if (at(x1, x2, mid) < x) lo = mid
+      else hi = mid
+    }
+    return at(y1, y2, (lo + hi) / 2)
+  }
+}
+
 // While regions are picked in the Wilayah filter, the rest of the city fades back: a
 // paper veil dims the other regions (their tint and kecamatan lines), and the picked
 // ones take a stronger tint. Both are layers of their own whose opacity fades (MapLibre
@@ -162,11 +178,18 @@ function clusterStudios(map, studios) {
   return items
 }
 
-export default function StudioMap({ focusSlug, padding }) {
+/**
+ * `inset`: how much of the map's right side a panel covers (px). The map never resizes
+ * for it, which would redraw the canvas every frame; the camera's padding eases instead,
+ * moving the view's center into the uncovered part in step with the panel (`insetMotion`:
+ * `{ duration, ease }` with `ease` as cubic-bezier points).
+ */
+export default function StudioMap({ focusSlug, padding, inset = 0, insetMotion }) {
   const { visible, bySlug, filters, hoveredSlug, setHoveredSlug, selectedSlug, setSelectedSlug } =
     useDirectory()
   const containerRef = useRef(null)
   const mapRef = useRef(null) // for handlers and effects
+  const insetRef = useRef(inset)
   const revealedRef = useRef(false)
   // True once the first reveal has played: markers that appear after it (filters, zoom)
   // pop in on their own.
@@ -324,12 +347,28 @@ export default function StudioMap({ focusSlug, padding }) {
     })
   }, [map])
 
-  // FR-08: a studio picked in the list centers the map.
+  // The panel opening or closing: shift the view's center with it, not the canvas size.
+  useEffect(() => {
+    insetRef.current = inset
+    if (!map || map.getPadding().right === inset) return
+    const { duration = 0, ease = [0.65, 0, 0.35, 1] } = insetMotion ?? {}
+    map.easeTo({
+      padding: { top: 0, bottom: 0, left: 0, right: inset },
+      duration: prefersReducedMotion() ? 0 : duration * 1000,
+      easing: cubicBezier(...ease),
+    })
+  }, [map, inset, insetMotion])
+
+  // FR-08: a studio picked in the list centers the map, in the part the panel leaves.
   useEffect(() => {
     if (!map || !focusSlug) return
     const s = bySlug.get(focusSlug)
     if (!s) return
-    const opts = { center: [s.lng, s.lat], zoom: Math.max(map.getZoom(), 14), padding }
+    const opts = {
+      center: [s.lng, s.lat],
+      zoom: Math.max(map.getZoom(), 14),
+      padding: { ...padding, right: padding.right + insetRef.current },
+    }
     if (prefersReducedMotion()) map.jumpTo(opts)
     else map.flyTo({ ...opts, duration: 900 })
   }, [map, focusSlug, bySlug, padding])

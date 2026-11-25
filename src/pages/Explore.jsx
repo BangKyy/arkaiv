@@ -8,6 +8,8 @@ import MapBoundary from '../components/MapBoundary'
 import SummaryCard from '../components/SummaryCard'
 import { CaretLineDown, CaretLineLeft, CaretLineRight, CaretLineUp } from '../components/icons'
 import { MOBILE_QUERY, useMediaQuery, usePageMeta } from '../lib/hooks'
+import { Loading } from '../lib/progress'
+import { useIntro } from '../lib/intro'
 import t from '../i18n/id'
 
 // MapLibre is the largest dependency. Loading it in its own chunk lets the header,
@@ -30,6 +32,9 @@ export default function Explore() {
   // The studio the map last flew to after a pick in the list.
   const [focusSlug, setFocusSlug] = useState(null)
   const toggleRef = useRef(null)
+  // Opening: the filter chips slide in row by row, the map tools settle (lib/intro).
+  const pageRef = useRef(null)
+  useIntro(pageRef)
   usePageMeta(t.nav.explore)
 
   // A pick in the list selects the studio and centers the map on it; where the panel
@@ -54,13 +59,19 @@ export default function Explore() {
       : CaretLineLeft
 
   return (
-    <div className={`explore ${panelOpen ? 'is-panel-open' : ''}`}>
+    <div ref={pageRef} className={`explore ${panelOpen ? 'is-panel-open' : ''}`}>
       <h1 className="visually-hidden">{t.nav.explore}</h1>
       <div className="explore__main">
         <MapFilter />
         <div className="explore__map">
           <MapBoundary>
-            <Suspense fallback={<div className="map-wrap map" aria-busy="true" />}>
+            <Suspense
+              fallback={
+                <Loading>
+                  <div className="map-wrap map" aria-busy="true" />
+                </Loading>
+              }
+            >
               <StudioMap
                 focusSlug={mapFocus}
                 padding={isMobile ? MOBILE_PADDING : DESKTOP_PADDING}
@@ -103,6 +114,7 @@ export default function Explore() {
         ref={toggleRef}
         type="button"
         className="panel-toggle"
+        data-intro="rise"
         aria-controls="studio-panel"
         aria-expanded={panelOpen}
         onClick={() => setPanelOpen((o) => !o)}

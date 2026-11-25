@@ -157,6 +157,8 @@ export default function StudioEditor({
     contact_phone: initial.contact_phone ?? '',
     contact_whatsapp: initial.contact_whatsapp ?? '',
     opening_hours: initial.opening_hours ?? '',
+    logo_url: initial.logo_url ?? '',
+    cover_url: initial.cover_url ?? '',
   }))
   const [slugTouched, setSlugTouched] = useState(!isNew)
   // Errors are set on submit; a field drops its error as soon as it is filled in correctly.
@@ -230,6 +232,8 @@ export default function StudioEditor({
         contact_phone: v.contact_phone.trim(),
         contact_whatsapp: v.contact_whatsapp.trim(),
         opening_hours: lines(v.opening_hours).join('\n'),
+        logo_url: normalizeUrl(v.logo_url.trim()),
+        cover_url: normalizeUrl(v.cover_url.trim()),
       },
       categories: v.categories,
     })
@@ -322,6 +326,30 @@ export default function StudioEditor({
       <fieldset className="studio-editor__group">
         <legend className="studio-editor__group-title">Halaman studio</legend>
         <p className="studio-editor__group-hint">Bagian yang kosong tidak tampil di halaman studio.</p>
+        <div className="register-form__row">
+          <TextField
+            label="URL logo"
+            type="url"
+            value={values.logo_url}
+            onChange={set('logo_url')}
+            placeholder="https://..."
+            hint="Persegi 1:1. Dari formulir pendaftaran, terisi otomatis."
+          />
+          <TextField
+            label="URL gambar header"
+            type="url"
+            value={values.cover_url}
+            onChange={set('cover_url')}
+            placeholder="https://..."
+            hint="Rasio 4:1 (2400×600 px)."
+          />
+        </div>
+        {(values.logo_url || values.cover_url) && (
+          <div className="studio-editor__images" aria-hidden="true">
+            {values.logo_url && <img className="studio-editor__logo" src={values.logo_url} alt="" />}
+            {values.cover_url && <img className="studio-editor__cover" src={values.cover_url} alt="" />}
+          </div>
+        )}
         <TextArea
           label="Tentang"
           value={values.about}

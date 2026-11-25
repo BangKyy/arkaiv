@@ -8,7 +8,7 @@ import t from '../i18n/id'
  */
 export default function Legend() {
   return (
-    <details className="map-tool legend">
+    <details className="map-tool legend" data-intro="drop">
       <summary className="legend__summary">
         <span className="legend__title">
           <span className="legend__icon-box">

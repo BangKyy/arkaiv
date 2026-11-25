@@ -4,6 +4,7 @@ import { DirectoryContext } from './directory'
 import { hasSupabase, loadSnapshot, refreshStudios } from '../lib/studios'
 import { applyFilters, readFilters, writeFilters } from '../lib/filters'
 import { track } from '../lib/analytics'
+import { useLoading } from '../lib/progress'
 
 /**
  * One dataset, two views (PRD section 8): the map and the list read the same
@@ -14,6 +15,7 @@ export default function DirectoryProvider({ children }) {
   // True once the studios are final: right away without Supabase, else after the refresh
   // (or its failure). Until then an unknown slug may still arrive, so it is not a 404 yet.
   const [ready, setReady] = useState(!hasSupabase)
+  useLoading(!ready)
   const [searchParams, setSearchParams] = useSearchParams()
   const [hoveredSlug, setHoveredSlug] = useState(null)
   // The pin whose summary card is open (US-02). Profiles use the route instead.

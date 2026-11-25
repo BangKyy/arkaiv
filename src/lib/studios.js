@@ -39,16 +39,41 @@ export async function refreshStudios({ timeoutMs = 6000 } = {}) {
   }
 }
 
+const MEDIA_BUCKET = 'studio-media'
+const IMAGE_KEYS = { logo: 'logo_url', cover: 'cover_url' }
+
+/**
+ * Uploads a compressed image (lib/images) to the public studio-media bucket, where
+ * visitors may only add files under submissions/. Returns its public URL.
+ */
+async function uploadSubmissionImage(client, image, slot) {
+  const ext = image.type === 'image/webp' ? 'webp' : 'jpg'
+  const path = `submissions/${crypto.randomUUID()}/${slot}.${ext}`
+  const { error } = await client.storage
+    .from(MEDIA_BUCKET)
+    .upload(path, image.blob, { contentType: image.type, cacheControl: '31536000', upsert: false })
+  if (error) throw error
+  return client.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl
+}
+
 /**
  * FR-13: queues a request in `submissions` (always pending, never read back; see
- * supabase/schema.sql). `kind` is 'new' | 'correction' | 'removal'. Throws on failure.
+ * supabase/schema.sql). `kind` is 'new' | 'correction' | 'removal'. Images in the
+ * payload (`logo`, `cover`) are uploaded first and sent as `logo_url` / `cover_url`.
+ * Throws on failure.
  */
 export async function sendSubmission({ kind, studioSlug, payload, timeoutMs = 10000 }) {
   if (!hasSupabase) throw new Error('Supabase is not configured')
   const client = await getClient()
+  const data = { ...payload }
+  for (const [slot, key] of Object.entries(IMAGE_KEYS)) {
+    const image = data[slot]
+    delete data[slot]
+    if (image) data[key] = await uploadSubmissionImage(client, image, slot)
+  }
   const { error } = await client
     .from('submissions')
-    .insert({ kind, studio_slug: studioSlug ?? null, payload })
+    .insert({ kind, studio_slug: studioSlug ?? null, payload: data })
     .abortSignal(AbortSignal.timeout(timeoutMs))
   if (error) throw error
 }

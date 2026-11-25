@@ -82,7 +82,7 @@ export async function listStudios() {
     .select(
       'id, slug, code, name, description, primary_category, address, area, lat, lng, website, instagram, status, source, last_verified, updated_at, ' +
         'about, founded_year, studio_type, specialties, approach, process, people, projects, ' +
-        'contact_email, contact_phone, contact_whatsapp, opening_hours, studio_categories(category_id)',
+        'contact_email, contact_phone, contact_whatsapp, opening_hours, logo_url, cover_url, studio_categories(category_id)',
     )
     .order('name')
   if (error) throw error

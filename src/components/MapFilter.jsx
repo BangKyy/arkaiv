@@ -72,10 +72,12 @@ function FilterRow({ label, children }) {
   const id = useId()
   return (
     <div className="map-filter__row" role="group" aria-labelledby={id}>
-      <span id={id} className="map-filter__label">
+      <span id={id} className="map-filter__label" data-intro="rise">
         {label}
       </span>
-      <div className="map-filter__tags">{children}</div>
+      <div className="map-filter__tags" data-intro="cascade">
+        {children}
+      </div>
     </div>
   )
 }

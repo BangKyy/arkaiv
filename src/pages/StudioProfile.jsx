@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { motion } from 'motion/react'
 import { useParams } from 'react-router'
 import { useDirectory } from '../state/directory'
 import Button from '../components/Button'
@@ -13,6 +14,8 @@ import { ArrowUpRight, Check, Copy } from '../components/icons'
 import { categoryName, getArea, googleMapsUrl, instagramUrl } from '../lib/catalog'
 import { formatDate, useMediaQuery, usePageMeta } from '../lib/hooks'
 import { track } from '../lib/analytics'
+import { useIntro } from '../lib/intro'
+import { inView, riseGroup } from '../lib/motion'
 import NotFound from './NotFound'
 import placeholder from '../assets/profile-placeholder.png'
 import t from '../i18n/id'
@@ -83,14 +86,17 @@ export default function StudioProfile() {
 
   return (
     <article className="studio-page" aria-labelledby="profile-name">
-      <Hero studio={studio} />
+      {/* Keyed so the intro replays, and its split text never meets a re-render. */}
+      <Hero key={studio.slug} studio={studio} />
       <div className="studio-page__sections">
         {sections.map((id, i) => (
           <section key={id} className="studio-page__inner studio-page__section" aria-labelledby={`sec-${id}`}>
             <SectionHeading eyebrow={t.profile.sectionEyebrow(i + 1)} id={`sec-${id}`}>
               {t.profile.sections[id]}
             </SectionHeading>
-            <SectionBody id={id} studio={studio} portfolio={portfolio} />
+            <motion.div className="studio-page__body" {...inView} variants={riseGroup}>
+              <SectionBody id={id} studio={studio} portfolio={portfolio} />
+            </motion.div>
           </section>
         ))}
       </div>
@@ -99,6 +105,8 @@ export default function StudioProfile() {
 }
 
 function Hero({ studio }) {
+  const heroRef = useRef(null)
+  useIntro(heroRef)
   const outbound = (type) => () => track('outbound_click', { studio: studio.slug, type })
   const links = [
     studio.contact?.email && { type: 'email', label: t.profile.email, href: `mailto:${studio.contact.email}` },
@@ -108,18 +116,18 @@ function Hero({ studio }) {
   ].filter(Boolean)
 
   return (
-    <header className="studio-hero">
+    <header ref={heroRef} className="studio-hero">
       <div className="studio-hero__media">
-        <img className="studio-hero__cover" src={studio.cover || placeholder} alt="" />
+        <img className="studio-hero__cover" src={studio.cover || placeholder} alt="" data-intro="media" />
         <div className="studio-page__inner">
-          <div className="studio-hero__logo">
+          <div className="studio-hero__logo" data-intro="pop">
             <img src={studio.logo || placeholder} alt={studio.logo ? `Logo ${studio.name}` : ''} />
           </div>
         </div>
       </div>
 
       <div className="studio-page__inner studio-hero__body">
-        <div className="studio-hero__top">
+        <div className="studio-hero__top" data-intro="rise">
           <div className="studio-hero__badges">
             <CodeBadge code={studio.code} area={studio.area} primaryCategory={studio.primaryCategory} />
             <ArchiveBadge label={t.profile.archive} years={t.profile.archiveYears} />
@@ -130,17 +138,19 @@ function Hero({ studio }) {
 
         <div className="studio-hero__text">
           {studio.lastVerified && (
-            <p className="studio-hero__verified">{t.profile.lastVerified(formatDate(studio.lastVerified))}</p>
+            <p className="studio-hero__verified" data-intro="rise">{t.profile.lastVerified(formatDate(studio.lastVerified))}</p>
           )}
-          <h1 id="profile-name" className="studio-hero__name" tabIndex={-1}>
+          <h1 id="profile-name" className="studio-hero__name" tabIndex={-1} data-intro="title">
             {studio.name}
           </h1>
-          <p className="studio-hero__lede">{studio.description}</p>
+          <p className="studio-hero__lede" data-intro="rise">
+            {studio.description}
+          </p>
         </div>
 
         <ul className="studio-hero__links">
           {links.map((l) => (
-            <li key={l.type}>
+            <li key={l.type} data-intro="rise">
               <Button
                 as="a"
                 href={l.href}

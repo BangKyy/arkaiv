@@ -4,6 +4,7 @@ import { MotionConfig } from 'motion/react'
 import DirectoryProvider from './state/DirectoryProvider'
 import GlobalHeader from './components/GlobalHeader'
 import GlobalFooter from './components/GlobalFooter'
+import LoadingBar from './components/LoadingBar'
 import Explore from './pages/Explore'
 import StudioListPanel from './pages/StudioListPanel'
 import StudioProfile from './pages/StudioProfile'
@@ -11,6 +12,7 @@ import About from './pages/About'
 import Submit from './pages/Submit'
 import NotFound from './pages/NotFound'
 import { useDirectory } from './state/directory'
+import { Loading } from './lib/progress'
 import t from './i18n/id'
 
 // Admins only, so visitors never download it.
@@ -40,7 +42,7 @@ export default function App() {
         <Route
           path="admin"
           element={
-            <Suspense fallback={null}>
+            <Suspense fallback={<Loading />}>
               <Admin />
             </Suspense>
           }
@@ -58,6 +60,7 @@ function Shell() {
     <MotionConfig reducedMotion="user">
       <DirectoryProvider>
         <div className="app">
+          <LoadingBar />
           <a className="skip-link" href="#main">
             Lewati ke konten
           </a>

@@ -15,12 +15,15 @@ const FIELDS = [
   ['instagram', 'Instagram'],
   ['categories', 'Kategori'],
   ['description', 'Deskripsi'],
+  ['logo_url', 'Logo'],
+  ['cover_url', 'Gambar header'],
   ['role', 'Hubungan dengan studio'],
   ['email', 'Email pengaju'],
   ['reason', 'Alasan'],
 ]
 // Fields a correction can change, compared against the current record.
-const COMPARABLE = ['name', 'address', 'area', 'website', 'instagram', 'categories', 'description']
+const COMPARABLE = ['name', 'address', 'area', 'website', 'instagram', 'categories', 'description', 'logo_url', 'cover_url']
+const IMAGES = new Set(['logo_url', 'cover_url'])
 
 const show = (key, v) => {
   if (v == null || v === '' || (Array.isArray(v) && !v.length)) return '—'
@@ -31,6 +34,17 @@ const show = (key, v) => {
   return String(v)
 }
 const same = (a, b) => show('x', a).toLowerCase() === show('x', b).toLowerCase()
+
+/** A value as shown in the review: uploaded images as a thumbnail linking to the file. */
+function Value({ field, value }) {
+  if (!IMAGES.has(field) || !value) return show(field, value)
+  return (
+    <a href={value} target="_blank" rel="noopener noreferrer" className={`review__image review__image--${field}`}>
+      <img src={value} alt="" />
+      <span className="visually-hidden">Buka gambar (tab baru)</span>
+    </a>
+  )
+}
 
 /**
  * Detail and decision for one submission. Nothing changes in `studios` until the admin
@@ -109,9 +123,11 @@ export default function SubmissionReview({ submission: sub, studios, onReviewed 
                   return (
                     <tr key={k} className={changed ? 'is-changed' : ''}>
                       <th scope="row">{FIELDS.find(([key]) => key === k)[1]}</th>
-                      <td>{show(k, target[k])}</td>
                       <td>
-                        {show(k, p[k])}
+                        <Value field={k} value={target[k]} />
+                      </td>
+                      <td>
+                        <Value field={k} value={p[k]} />
                         {changed && <span className="visually-hidden"> (berubah)</span>}
                       </td>
                     </tr>
@@ -129,7 +145,9 @@ export default function SubmissionReview({ submission: sub, studios, onReviewed 
             {FIELDS.filter(([k]) => k in p).map(([k, label]) => (
               <div key={k}>
                 <dt>{label}</dt>
-                <dd>{show(k, p[k])}</dd>
+                <dd>
+                  <Value field={k} value={p[k]} />
+                </dd>
               </div>
             ))}
           </dl>

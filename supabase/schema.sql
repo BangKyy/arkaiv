@@ -216,7 +216,11 @@ begin
     contact_whatsapp = case when p_studio ? 'contact_whatsapp'
                             then nullif(btrim(p_studio->>'contact_whatsapp'), '') else s.contact_whatsapp end,
     opening_hours    = case when p_studio ? 'opening_hours'
-                            then nullif(btrim(p_studio->>'opening_hours'), '') else s.opening_hours end
+                            then nullif(btrim(p_studio->>'opening_hours'), '') else s.opening_hours end,
+    logo_url         = case when p_studio ? 'logo_url'
+                            then nullif(btrim(p_studio->>'logo_url'), '') else s.logo_url end,
+    cover_url        = case when p_studio ? 'cover_url'
+                            then nullif(btrim(p_studio->>'cover_url'), '') else s.cover_url end
   where s.id = target;
 
   if p_categories is not null then
@@ -295,3 +299,23 @@ end $$;
 
 revoke execute on function public.review_submission(uuid, text, text, uuid, jsonb, text[]) from anon, public;
 grant execute on function public.review_submission(uuid, text, text, uuid, jsonb, text[]) to authenticated;
+
+-- ---------- Storage: logo and header images (registration form, admin) ----------
+-- Public bucket: studio pages show the images by URL. Visitors may only add new files
+-- under submissions/ (no listing, overwriting or deleting); admins manage everything.
+-- The form compresses images to WebP before upload; 1 MB is the hard cap.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('studio-media', 'studio-media', true, 1048576, array['image/webp', 'image/jpeg', 'image/png'])
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+create policy "public upload submission media" on storage.objects
+  for insert to anon, authenticated
+  with check (bucket_id = 'studio-media' and (storage.foldername(name))[1] = 'submissions');
+
+create policy "admins manage studio media" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'studio-media' and public.is_admin())
+  with check (bucket_id = 'studio-media' and public.is_admin());

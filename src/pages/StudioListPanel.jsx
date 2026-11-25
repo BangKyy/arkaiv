@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useDirectory } from '../state/directory'
 import { categoryLine, getArea } from '../lib/catalog'
 import { track } from '../lib/analytics'
+import { EASE_OUT } from '../lib/motion'
 import Button from '../components/Button'
 import StudioContact from '../components/StudioContact'
 import { StudioBadges } from '../components/StudioBits'
@@ -44,7 +45,7 @@ export default function StudioListPanel() {
         <>
           <header className="sidebar__head">
             <p className="sidebar__count" aria-live="polite">
-              <span className="sidebar__number">{visible.length}</span>
+              <RollingNumber value={visible.length} />
               <span className="sidebar__shown">{t.list.shown}</span>
             </p>
             <Button
@@ -70,9 +71,9 @@ export default function StudioListPanel() {
               </div>
             ) : (
               <ol className="studio-list">
-                <AnimatePresence initial={false}>
-                  {sorted.map((s) => (
-                    <StudioRow key={s.slug} studio={s} focusRef={focusProfile} />
+                <AnimatePresence>
+                  {sorted.map((s, i) => (
+                    <StudioRow key={s.slug} studio={s} index={i} focusRef={focusProfile} />
                   ))}
                 </AnimatePresence>
               </ol>
@@ -195,7 +196,44 @@ function ShortProfile({ studio, focusRef }) {
 }
 
 /** Figma "Sidebar/Card": region bar and code, name, categories, "Lihat profil singkat". */
-function StudioRow({ studio, focusRef }) {
+/**
+ * The studio count rolls to its new value: the old number leaves upward and the new one
+ * comes up from below (down and up when it shrinks). Screen readers get the plain number.
+ */
+function RollingNumber({ value }) {
+  // Which way it rolls, worked out when the value changes.
+  const [roll, setRoll] = useState({ value, direction: 1 })
+  if (roll.value !== value) setRoll({ value, direction: value > roll.value ? 1 : -1 })
+  const { direction } = roll
+
+  return (
+    <span className="sidebar__number">
+      <span className="visually-hidden">{value}</span>
+      <span className="sidebar__roll" aria-hidden="true">
+        <AnimatePresence initial={false} mode="popLayout" custom={direction}>
+          <motion.span
+            key={value}
+            custom={direction}
+            className="sidebar__roll-value"
+            variants={{
+              enter: (d) => ({ y: `${d * 100}%`, opacity: 0 }),
+              still: { y: '0%', opacity: 1 },
+              leave: (d) => ({ y: `${d * -100}%`, opacity: 0 }),
+            }}
+            initial="enter"
+            animate="still"
+            exit="leave"
+            transition={{ duration: 0.35, ease: EASE_OUT }}
+          >
+            {value}
+          </motion.span>
+        </AnimatePresence>
+      </span>
+    </span>
+  )
+}
+
+function StudioRow({ studio, index, focusRef }) {
   const { hoveredSlug, setHoveredSlug, selectedSlug } = useDirectory()
   const { showOnMap } = useOutletContext()
   const ref = useRef(null)
@@ -212,10 +250,17 @@ function StudioRow({ studio, focusRef }) {
     <motion.li
       ref={ref}
       layout="position"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
+      // Rows cascade in from the right as the list opens (capped, so a long list does
+      // not keep anyone waiting); a filtered-out row just fades.
+      initial={{ opacity: 0, x: 16 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, transition: { duration: 0.15 } }}
+      transition={{
+        duration: 0.4,
+        ease: EASE_OUT,
+        delay: Math.min(index, 12) * 0.035,
+        layout: { duration: 0.3, ease: EASE_OUT },
+      }}
       className={`studio-row ${active ? 'is-active' : ''}`}
       style={{ '--region': `var(--region-${studio.area})` }}
     >

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Button from './Button'
+import ImageField from './ImageField'
 import RegionSelect from './RegionSelect'
 import { TagCategory } from './Tags'
 import { TextArea, TextField } from './Fields'
@@ -30,7 +31,8 @@ const Optional = ({ children }) => (
 /**
  * "Form" (studio registration) from the Figma library: two columns on wide screens
  * (Size=lg), one column on phones (Size=sm). Validates on submit and hands the values
- * to `onSubmit({ name, address, area, email, website, instagram, categories, description })`;
+ * to `onSubmit({ name, address, area, email, website, instagram, categories, description,
+ * logo, cover })`, where logo and cover are compressed images (lib/images) or null;
  * sending them anywhere is up to the caller. `onValuesChange` gets the same values while
  * the form is filled in (for the progress checklist).
  */
@@ -38,6 +40,8 @@ export default function RegisterForm({ onSubmit, onValuesChange, submitting = fa
   const formRef = useRef(null)
   const [area, setArea] = useState('')
   const [picked, setPicked] = useState([])
+  const [logo, setLogo] = useState(null)
+  const [cover, setCover] = useState(null)
   const [errors, setErrors] = useState({})
 
   const togglePick = (id) =>
@@ -54,6 +58,8 @@ export default function RegisterForm({ onSubmit, onValuesChange, submitting = fa
       instagram: form.get('instagram')?.trim(),
       categories: picked,
       description: form.get('description')?.trim(),
+      logo,
+      cover,
     }
   }
   // Reports the values and drops the errors of fields that are now filled in correctly.
@@ -63,10 +69,10 @@ export default function RegisterForm({ onSubmit, onValuesChange, submitting = fa
     setErrors((prev) => clearFixedErrors(prev, validate(values)))
   }
 
-  // Region and categories are not inputs, so their changes are reported from here.
+  // Region, categories and images are not text inputs, so their changes are reported from here.
   useEffect(() => {
     report()
-  }, [area, picked]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [area, picked, logo, cover]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -139,6 +145,34 @@ export default function RegisterForm({ onSubmit, onValuesChange, submitting = fa
           </p>
         )}
       </fieldset>
+      <div className="register-form__row register-form__row--images">
+        <ImageField
+          slot="logo"
+          label={<Optional>Logo</Optional>}
+          title="Unggah Logo"
+          hints={[
+            'Persegi 1:1 minimal 400×400 px.',
+            'Format JPG, PNG, atau WebP.',
+            'Dipotong di tengah dan dikompres otomatis.',
+          ]}
+          value={logo}
+          onChange={setLogo}
+          disabled={submitting}
+        />
+        <ImageField
+          slot="cover"
+          label={<Optional>Header</Optional>}
+          title="Unggah Header"
+          hints={[
+            'Rasio 4:1 disarankan 2400×600 px.',
+            'Garis putus-putus menandai area yang terlihat di semua perangkat.',
+            'Dikompres otomatis.',
+          ]}
+          value={cover}
+          onChange={setCover}
+          disabled={submitting}
+        />
+      </div>
       <TextArea
         name="description"
         label={<Optional>Deskripsi</Optional>}

@@ -1,6 +1,7 @@
 // Button from the Figma library ("Button/Buttons" and "Button/Buttons destructive").
 // Hierarchy: primary (filled), outlined, link. Tone: default (ink) or danger (error red).
 // Icons are Phosphor at regular weight, which is what the Figma ArrowUpRight instance is.
+import { ArrowUpRight } from './icons'
 
 const ICON_SIZE = { sm: 14, md: 14, lg: 16, xl: 18 }
 
@@ -27,6 +28,7 @@ export default function Button({
     `btn--${size}`,
     tone === 'danger' && 'btn--danger',
     only && 'btn--icon-only',
+    Icon === ArrowUpRight && 'btn--arrow',
     className,
   ]
     .filter(Boolean)

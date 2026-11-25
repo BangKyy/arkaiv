@@ -3,6 +3,7 @@
 // one SVG per category and variant in src/assets/category-icons.
 import { Stack } from '@phosphor-icons/react/dist/csr/Stack'
 import { GridFour as PhosphorGridFour } from '@phosphor-icons/react/dist/csr/GridFour'
+import { File as PhosphorFile } from '@phosphor-icons/react/dist/csr/File'
 
 export { ArrowLeft } from '@phosphor-icons/react/dist/csr/ArrowLeft'
 export { ArrowRight } from '@phosphor-icons/react/dist/csr/ArrowRight'
@@ -31,12 +32,18 @@ export { MapTrifold } from '@phosphor-icons/react/dist/csr/MapTrifold'
 export { MapPinSimpleLine } from '@phosphor-icons/react/dist/csr/MapPinSimpleLine'
 export { Info } from '@phosphor-icons/react/dist/csr/Info'
 export { Question } from '@phosphor-icons/react/dist/csr/Question'
+export { Upload } from '@phosphor-icons/react/dist/csr/Upload'
 export { MagnifyingGlass } from '@phosphor-icons/react/dist/csr/MagnifyingGlass'
 export { Microphone } from '@phosphor-icons/react/dist/csr/Microphone'
 
 /** The header's menu icon is GridFour at fill weight (as in the Figma header). */
 export function GridFour(props) {
   return <PhosphorGridFour weight="fill" {...props} />
+}
+
+/** The image uploader's File icon, at fill weight as in the Figma "_IMGUploader Base". */
+export function FileFill(props) {
+  return <PhosphorFile weight="fill" {...props} />
 }
 
 // Keyed "<category>-<variant>", e.g. "branding-bold".

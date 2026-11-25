@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { usePageMeta } from '../lib/hooks'
+import { useLoading } from '../lib/progress'
 import { hasSupabase } from '../lib/studios'
 import {
   KIND_LABEL,
@@ -29,6 +30,7 @@ export default function Admin() {
   usePageMeta('Admin')
   useNoIndex()
   const auth = useAdminAuth()
+  useLoading(auth.phase === 'loading')
 
   return (
     <article className="about about--admin">

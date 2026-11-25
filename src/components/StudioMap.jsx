@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { motion } from 'motion/react'
 import { MapLibreMap, Marker, setWorkerUrl } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 // MapLibre 6 runs its worker from a separate module file; let Vite ship it and tell MapLibre where.
@@ -11,6 +12,8 @@ import { useDirectory } from '../state/directory'
 import { getCategory } from '../lib/catalog'
 import { boundsOf } from '../lib/geo'
 import { track } from '../lib/analytics'
+import { useLoading } from '../lib/progress'
+import { EASE_OUT } from '../lib/motion'
 import {
   ArrowClockwise,
   ArrowCounterClockwise,
@@ -45,62 +48,81 @@ const DETAIL_ZOOM = 12
 // It is also the fallback when the street map cannot load.
 const STREET_STYLE = 'https://tiles.openfreemap.org/styles/positron'
 const INK = '#151515'
-const DIAGRAM_STYLE = {
-  version: 8,
-  sources: {
-    wilayah: { type: 'geojson', data: boundaries },
-    kecamatan: { type: 'geojson', data: kecamatan },
-    city: { type: 'geojson', data: city },
-  },
-  layers: [
-    { id: 'ground', type: 'background', paint: { 'background-color': '#e9e6de' } },
-    {
-      id: 'wilayah-fill',
-      type: 'fill',
-      source: 'wilayah',
-      paint: {
-        // Colors/Region Color (see --region-* in index.css).
-        'fill-color': [
-          'match',
-          ['get', 'id'],
-          'pusat',
-          '#0e733b',
-          'utara',
-          '#8d3795',
-          'timur',
-          '#bf1e2e',
-          'selatan',
-          '#0489cc',
-          '#f1592a',
-        ],
-        'fill-opacity': 0.07,
-      },
-    },
-    {
-      id: 'kecamatan-line',
-      type: 'line',
-      source: 'kecamatan',
-      paint: {
-        'line-color': INK,
-        'line-width': 0.7,
-        'line-dasharray': [2, 3],
-        'line-opacity': 0.38,
-      },
-    },
-    {
-      id: 'wilayah-line',
-      type: 'line',
-      source: 'wilayah',
-      paint: { 'line-color': INK, 'line-width': 1.5, 'line-opacity': 0.72 },
-    },
-    { id: 'city-line', type: 'line', source: 'city', paint: { 'line-color': INK, 'line-width': 1.8 } },
-  ],
-}
-
-const styleFor = (mode) => (mode === 'peta' ? STREET_STYLE : DIAGRAM_STYLE)
+const GROUND = '#e9e6de'
+// Colors/Region Color (see --region-* in index.css).
+const REGION_COLOR = ['match', ['get', 'id'], 'pusat', '#0e733b', 'utara', '#8d3795', 'timur', '#bf1e2e', 'selatan', '#0489cc', '#f1592a']
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+// While regions are picked in the Wilayah filter, the rest of the city fades back: a
+// paper veil dims the other regions (their tint and kecamatan lines), and the picked
+// ones take a stronger tint. Both are layers of their own whose opacity fades (MapLibre
+// cannot fade a color expression); only their filters say which regions they cover.
+const picked = (areas) => ['in', ['get', 'id'], ['literal', areas]]
+const FOCUS_OPACITY = 0.16
+const VEIL_OPACITY = 0.78
+const focusPaint = (areas) => ({
+  focus: areas.length ? FOCUS_OPACITY : 0,
+  veil: areas.length ? VEIL_OPACITY : 0,
+})
+const fade = () => ({ duration: prefersReducedMotion() ? 0 : 450, delay: 0 })
+
+/** The Diagram style, drawn for the regions picked in the filter (`areas`). */
+function diagramStyle(areas) {
+  const { focus, veil } = focusPaint(areas)
+  return {
+    version: 8,
+    sources: {
+      wilayah: { type: 'geojson', data: boundaries },
+      kecamatan: { type: 'geojson', data: kecamatan },
+      city: { type: 'geojson', data: city },
+    },
+    layers: [
+      { id: 'ground', type: 'background', paint: { 'background-color': GROUND } },
+      {
+        id: 'wilayah-fill',
+        type: 'fill',
+        source: 'wilayah',
+        paint: { 'fill-color': REGION_COLOR, 'fill-opacity': 0.07 },
+      },
+      {
+        id: 'wilayah-focus',
+        type: 'fill',
+        source: 'wilayah',
+        filter: picked(areas),
+        paint: { 'fill-color': REGION_COLOR, 'fill-opacity': focus, 'fill-opacity-transition': fade() },
+      },
+      {
+        id: 'kecamatan-line',
+        type: 'line',
+        source: 'kecamatan',
+        paint: {
+          'line-color': INK,
+          'line-width': 0.7,
+          'line-dasharray': [2, 3],
+          'line-opacity': 0.38,
+        },
+      },
+      {
+        id: 'wilayah-veil',
+        type: 'fill',
+        source: 'wilayah',
+        filter: ['!', picked(areas)],
+        paint: { 'fill-color': GROUND, 'fill-opacity': veil, 'fill-opacity-transition': fade() },
+      },
+      {
+        id: 'wilayah-line',
+        type: 'line',
+        source: 'wilayah',
+        paint: { 'line-color': INK, 'line-width': 1.5, 'line-opacity': 0.72 },
+      },
+      { id: 'city-line', type: 'line', source: 'city', paint: { 'line-color': INK, 'line-width': 1.8 } },
+    ],
+  }
+}
+
+const styleFor = (mode, areas) => (mode === 'peta' ? STREET_STYLE : diagramStyle(areas))
 
 /** Greedy screen-space clustering (FR-02): nearby pins merge at low zoom. */
 function clusterStudios(map, studios) {
@@ -146,12 +168,21 @@ export default function StudioMap({ focusSlug, padding }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null) // for handlers and effects
   const revealedRef = useRef(false)
+  // True once the first reveal has played: markers that appear after it (filters, zoom)
+  // pop in on their own.
+  const [revealed, setRevealed] = useState(false)
   const [map, setMap] = useState(null) // set once loaded; used for rendering markers
   const [failed, setFailed] = useState(false)
+  useLoading(!map && !failed)
   const [attempt, setAttempt] = useState(0)
   const [viewTick, setViewTick] = useState(0)
   const [mode, setMode] = useState('peta')
   const modeRef = useRef(mode)
+  // The picked regions, for the Diagram style when it is (re)built outside a render.
+  const areasRef = useRef(filters.areas)
+  useEffect(() => {
+    areasRef.current = filters.areas
+  }, [filters.areas])
 
   // Create the map once per attempt (a retry after an error remounts it).
   useEffect(() => {
@@ -161,7 +192,7 @@ export default function StudioMap({ focusSlug, padding }) {
     try {
       instance = new MapLibreMap({
         container: containerRef.current,
-        style: styleFor(modeRef.current),
+        style: styleFor(modeRef.current, areasRef.current),
         bounds: SURABAYA_BOUNDS,
         fitBoundsOptions: { padding: 32 },
         maxBounds: MAX_BOUNDS,
@@ -196,7 +227,7 @@ export default function StudioMap({ focusSlug, padding }) {
       if (modeRef.current === 'peta') {
         modeRef.current = 'diagram'
         setMode('diagram')
-        instance.setStyle(DIAGRAM_STYLE)
+        instance.setStyle(diagramStyle(areasRef.current))
       } else setFailed(true)
     })
     instance.on('moveend', () => setViewTick((v) => v + 1))
@@ -219,9 +250,33 @@ export default function StudioMap({ focusSlug, padding }) {
     if (next === modeRef.current) return
     modeRef.current = next
     setMode(next)
-    mapRef.current?.setStyle(styleFor(next))
+    mapRef.current?.setStyle(styleFor(next, filters.areas))
     track('map_type', { mode: next })
   }
+
+  // Diagram: picking or clearing regions fades the others back or in again. A style that
+  // is still loading already carries the picked regions, or gets them once it is in.
+  useEffect(() => {
+    if (!map || mode !== 'diagram') return undefined
+    const apply = () => {
+      const { focus, veil } = focusPaint(filters.areas)
+      map.setFilter('wilayah-focus', picked(filters.areas))
+      map.setFilter('wilayah-veil', ['!', picked(filters.areas)])
+      map.setPaintProperty('wilayah-focus', 'fill-opacity', focus)
+      map.setPaintProperty('wilayah-veil', 'fill-opacity', veil)
+    }
+    if (map.getLayer('wilayah-veil')) {
+      apply()
+      return undefined
+    }
+    const whenReady = () => {
+      if (!map.getLayer('wilayah-veil')) return
+      map.off('styledata', whenReady)
+      apply()
+    }
+    map.on('styledata', whenReady)
+    return () => map.off('styledata', whenReady)
+  }, [map, mode, filters.areas])
 
   // viewTick re-runs clustering after every pan or zoom.
   const items = useMemo(
@@ -229,23 +284,43 @@ export default function StudioMap({ focusSlug, padding }) {
     [map, visible, viewTick], // eslint-disable-line react-hooks/exhaustive-deps
   )
 
-  // GSAP owns the staggered first reveal of pins (PRD animation split). It never
-  // blocks the map: pins are usable immediately, the animation only decorates them.
+  // GSAP owns the staggered first reveal (PRD animation split): the region labels
+  // spring up across the city, then the pins drop in. It never blocks the map: pins
+  // are usable immediately, the animation only decorates them.
   useEffect(() => {
     if (!map || revealedRef.current || prefersReducedMotion()) return
     revealedRef.current = true
     import('gsap').then(({ gsap }) => {
-      const els = containerRef.current?.querySelectorAll('.pin, .cluster')
-      if (!els?.length) return
-      gsap.from(els, {
-        opacity: 0,
-        y: -10,
-        scale: 0.6,
-        duration: 0.45,
-        stagger: 0.035,
-        ease: 'back.out(2)',
-        clearProps: 'transform,opacity',
-      })
+      const root = containerRef.current
+      if (!root) return
+      const regions = root.querySelectorAll('.map-region')
+      const pins = root.querySelectorAll('.pin, .cluster')
+      const reveal = gsap.timeline({ onComplete: () => setRevealed(true) })
+      if (regions.length) {
+        reveal.from(regions, {
+          opacity: 0,
+          scale: 0.7,
+          duration: 0.5,
+          stagger: 0.07,
+          ease: 'back.out(1.8)',
+          clearProps: 'transform,opacity',
+        })
+      }
+      if (pins.length) {
+        reveal.from(
+          pins,
+          {
+            opacity: 0,
+            y: -10,
+            scale: 0.6,
+            duration: 0.45,
+            stagger: 0.035,
+            ease: 'back.out(2)',
+            clearProps: 'transform,opacity',
+          },
+          regions.length ? 0.2 : 0,
+        )
+      }
     })
   }, [map])
 
@@ -267,10 +342,10 @@ export default function StudioMap({ focusSlug, padding }) {
 
   // MapLibre copies every key it is given, so `duration: undefined` would replace its
   // default and stall the animation: only pass a duration to turn motion off.
-  const motion = () => (prefersReducedMotion() ? { duration: 0 } : {})
-  const zoomIn = () => mapRef.current?.zoomIn(motion())
-  const zoomOut = () => mapRef.current?.zoomOut(motion())
-  const resetView = () => mapRef.current?.fitBounds(SURABAYA_BOUNDS, { padding: 32, ...motion() })
+  const zoomMotion = () => (prefersReducedMotion() ? { duration: 0 } : {})
+  const zoomIn = () => mapRef.current?.zoomIn(zoomMotion())
+  const zoomOut = () => mapRef.current?.zoomOut(zoomMotion())
+  const resetView = () => mapRef.current?.fitBounds(SURABAYA_BOUNDS, { padding: 32, ...zoomMotion() })
 
   const expandCluster = (members) => {
     mapRef.current?.fitBounds(boundsOf(members.map((m) => [m.lng, m.lat])), {
@@ -315,6 +390,7 @@ export default function StudioMap({ focusSlug, padding }) {
             >
               <Pin
                 studio={item.studio}
+                entering={revealed}
                 active={isActive(item.studio.slug)}
                 expanded={selectedSlug === item.studio.slug}
                 onSelect={() => {
@@ -335,6 +411,7 @@ export default function StudioMap({ focusSlug, padding }) {
             >
               <Cluster
                 members={item.members}
+                entering={revealed}
                 active={item.members.some((m) => isActive(m.slug))}
                 onExpand={() => expandCluster(item.members)}
               />
@@ -342,7 +419,15 @@ export default function StudioMap({ focusSlug, padding }) {
           ),
         )}
 
-      <div className="map-tool map-type" role="group" aria-label={t.map.type}>
+      {/* The tools slide in from their edges as the map arrives. */}
+      <motion.div
+        className="map-tool map-type"
+        role="group"
+        aria-label={t.map.type}
+        initial={{ opacity: 0, x: 24 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6, ease: EASE_OUT, delay: 0.15 }}
+      >
         <MapTypeButton
           mode="peta"
           current={mode}
@@ -357,10 +442,15 @@ export default function StudioMap({ focusSlug, padding }) {
           label={t.map.typeDiagram}
           onPick={changeMode}
         />
-      </div>
+      </motion.div>
 
       {/* Figma "Map/Tools/Zoom": in, out, and back to the whole city. */}
-      <div className="map-tool map-zoom">
+      <motion.div
+        className="map-tool map-zoom"
+        initial={{ opacity: 0, x: -24 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.6, ease: EASE_OUT, delay: 0.25 }}
+      >
         <button
           type="button"
           className="map-zoom__button"
@@ -385,7 +475,7 @@ export default function StudioMap({ focusSlug, padding }) {
         >
           <ArrowCounterClockwise size={22} aria-hidden="true" />
         </button>
-      </div>
+      </motion.div>
 
       {mode === 'peta' && <p className="map-attribution">{t.map.attribution}</p>}
 
@@ -445,14 +535,24 @@ function MapMarker({ map, lngLat, anchor, raised, children }) {
 
 /** One choice of "Map/Tools/TipeMap": the word on desktop, its icon on smaller screens. */
 function MapTypeButton({ mode, current, icon: Icon, label, onPick }) {
+  const active = mode === current
   return (
     <button
       type="button"
       className="map-type__option"
-      aria-pressed={mode === current}
+      aria-pressed={active}
       aria-label={label}
       onClick={() => onPick(mode)}
     >
+      {/* One paper highlight, shared by both options, that slides to the one picked. */}
+      {active && (
+        <motion.span
+          layoutId="map-type-active"
+          className="map-type__active"
+          transition={{ type: 'spring', stiffness: 520, damping: 40 }}
+          aria-hidden="true"
+        />
+      )}
       <span className="map-type__label" aria-hidden="true">
         {label}
       </span>
@@ -461,12 +561,14 @@ function MapTypeButton({ mode, current, icon: Icon, label, onPick }) {
   )
 }
 
-function Pin({ studio, active, expanded, onSelect, onHover }) {
+function Pin({ studio, entering, active, expanded, onSelect, onHover }) {
   const cat = getCategory(studio.primaryCategory)
+  // Only a pin that appears after the first reveal pops in (kept from its first render).
+  const [enter] = useState(entering)
   return (
     <button
       type="button"
-      className={`pin ${active ? 'is-active' : ''}`}
+      className={`pin ${enter ? 'pin--enter' : ''} ${active ? 'is-active' : ''}`}
       data-slug={studio.slug}
       aria-label={t.map.pin(studio.name, cat?.name ?? '')}
       aria-expanded={expanded}
@@ -486,11 +588,12 @@ function Pin({ studio, active, expanded, onSelect, onHover }) {
   )
 }
 
-function Cluster({ members, active, onExpand }) {
+function Cluster({ members, entering, active, onExpand }) {
+  const [enter] = useState(entering)
   return (
     <button
       type="button"
-      className={`cluster ${active ? 'is-active' : ''}`}
+      className={`cluster ${enter ? 'pin--enter' : ''} ${active ? 'is-active' : ''}`}
       aria-label={t.map.cluster(members.length)}
       onClick={(e) => {
         e.stopPropagation()

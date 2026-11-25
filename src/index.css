@@ -21,6 +21,10 @@
   --btn-base: #252722; /* Colors/Button/Base, border/strong, text/dark */
   --btn-hover: #353437; /* text/hover */
   --btn-pressed: #666465; /* Colors/Button/Pressed */
+  /* Brand ink for the scrollbar and loading bar, resolved here so components that
+     restyle --btn-base keep it. */
+  --scrollbar-thumb: var(--btn-base);
+  --scrollbar-thumb-active: var(--btn-pressed);
   --btn-disabled: #b4b1af; /* Colors/Button/Disabled */
   --error-200: #f5b2aa;
   --error-500: #fc3c2f;
@@ -82,6 +86,63 @@ body,
 body {
   background: var(--paper);
   overflow: hidden;
+}
+
+/* Figma "Scroll Bar" (195:10094), on every scroll area: a 22px paper track with
+   CaretUp/CaretDown ends (14px, 10px from the edge) and an 8px square ink thumb.
+   Only where there is a mouse; touch screens keep their overlay scrollbars.
+   Firefox can only color its scrollbar (see the @supports rule below). */
+@media (hover: hover) and (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 22px;
+    height: 22px;
+    background: var(--canvas);
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: var(--canvas);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border: solid transparent;
+    border-width: 0 7px;
+    background: var(--scrollbar-thumb) padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:horizontal {
+    border-width: 7px 0;
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background-color: var(--scrollbar-thumb-active);
+  }
+
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
+
+  ::-webkit-scrollbar-button:vertical:start:decrement,
+  ::-webkit-scrollbar-button:vertical:end:increment {
+    display: block;
+    height: 24px;
+    background: var(--canvas) no-repeat center bottom / 14px 14px;
+  }
+
+  ::-webkit-scrollbar-button:vertical:start:decrement {
+    background-image: url('./assets/scrollbar/caret-up.svg');
+  }
+
+  ::-webkit-scrollbar-button:vertical:end:increment {
+    background-image: url('./assets/scrollbar/caret-down.svg');
+    background-position: center top;
+  }
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  :root {
+    scrollbar-color: var(--scrollbar-thumb) var(--canvas);
+  }
 }
 
 h1,
@@ -147,6 +208,52 @@ img {
   height: 100dvh;
   display: flex;
   flex-direction: column;
+}
+
+/* Page loading bar (components/LoadingBar): 3px of brand ink across the top of the
+   window, above the header. */
+.loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 101;
+  height: 3px;
+  background: var(--scrollbar-thumb);
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-bar--start {
+  opacity: 1;
+  transform: scaleX(0.08);
+}
+
+/* Fast at first, then slower and slower: it never reaches 90% on its own. */
+.loading-bar--run {
+  opacity: 1;
+  transform: scaleX(0.9);
+  transition: transform 12s cubic-bezier(0.08, 0.7, 0.2, 1);
+}
+
+.loading-bar--done {
+  opacity: 0;
+  transform: scaleX(1);
+  transition:
+    transform 200ms ease-out,
+    opacity 250ms ease 200ms;
+}
+
+/* Without motion: a full, still bar while loading, gone when done. */
+@media (prefers-reduced-motion: reduce) {
+  .loading-bar--start,
+  .loading-bar--run,
+  .loading-bar--done {
+    transform: none;
+    transition: none;
+  }
 }
 
 /* Figma "Organism/Global Header": lg bar 24/80 padding, 24/30 on tablet, sm-1 (24/32) below
@@ -228,6 +335,10 @@ img {
   background: var(--canvas);
   color: var(--btn-base);
   cursor: pointer;
+}
+
+.global-header__toggle-icon {
+  display: grid;
 }
 
 /* Same states as an outlined button. */
@@ -385,6 +496,21 @@ img {
 
 .btn svg {
   flex-shrink: 0;
+}
+
+/* The up-right arrow nudges the way it points on hover. */
+.btn--arrow svg {
+  transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.btn--arrow:hover:not(:disabled, [aria-disabled='true']) svg {
+  transform: translate(2px, -2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn--arrow svg {
+    transition: none;
+  }
 }
 
 .btn--sm {
@@ -605,11 +731,22 @@ img {
 
 /* Figma "Section Heading" */
 .section-heading {
+  position: relative;
   display: flex;
   flex-direction: column;
   padding-bottom: 16px;
   margin-bottom: 24px;
-  border-bottom: 1px solid var(--btn-base);
+}
+
+/* The ink rule under the heading, its own element so it can draw in (SectionHeading). */
+.section-heading__rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: var(--btn-base);
+  transform-origin: left;
 }
 
 .section-heading__eyebrow {
@@ -1055,6 +1192,13 @@ img {
   color: var(--btn-base);
 }
 
+/* A title's lines while they rise out of their masks (lib/intro). The masks reach a
+   little below each line, so tight line heights do not crop the descenders. */
+.intro-line-mask {
+  padding-bottom: 0.15em;
+  margin-bottom: -0.15em;
+}
+
 /* Desktop sets the city in Doto, like the cover. */
 .about__title-accent {
   font-family: var(--font-accent);
@@ -1074,9 +1218,10 @@ img {
   height: 358px;
 }
 
+/* Figma frames 66:13644 / 85:6277 / 92:4821: the book image sits in a full 1px ink frame. */
 .about__book-media {
   flex: 0 0 417px;
-  border-right: 1px solid var(--btn-base);
+  border: 1px solid var(--btn-base);
 }
 
 .about__book-media img {
@@ -1206,7 +1351,6 @@ img {
   .about__book-media {
     flex: none;
     height: 287px;
-    border-right: 0;
   }
 }
 
@@ -1606,6 +1750,51 @@ img {
   color: var(--btn-base);
 }
 
+/* Uploaded logo and header, as thumbnails linking to the file. */
+.review__image {
+  display: inline-block;
+  border: 1px solid var(--btn-base);
+}
+
+.review__image img {
+  display: block;
+  height: 64px;
+  max-width: none;
+  object-fit: cover;
+}
+
+.review__image--logo_url img {
+  width: 64px;
+}
+
+.review__image--cover_url img {
+  width: 256px;
+  max-width: 100%;
+}
+
+.studio-editor__images {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.studio-editor__images img {
+  display: block;
+  height: 80px;
+  border: 1px solid var(--btn-base);
+  object-fit: cover;
+}
+
+.studio-editor__logo {
+  width: 80px;
+}
+
+.studio-editor__cover {
+  width: 320px;
+  max-width: 100%;
+}
+
 .review__facts {
   display: grid;
   margin: 0;
@@ -1856,6 +2045,7 @@ img {
   gap: 8px;
   font: 400 14px/20px var(--font-body);
   color: var(--progress-color);
+  transition: color 300ms ease;
 }
 
 .progress-check__item.is-done {
@@ -1891,6 +2081,16 @@ img {
   height: 12px;
   margin-left: 9.5px;
   background: var(--progress-color);
+  transition:
+    height 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 300ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-check__item,
+  .progress-check__item::after {
+    transition: none;
+  }
 }
 
 .progress-check__item.is-done:not(:last-child)::after {
@@ -2157,6 +2357,104 @@ img {
 
 .register-form__submit {
   align-self: flex-start;
+}
+
+/* Image upload (Figma "Input/ImageUpload"): a dashed drop area with the File icon,
+   a title and an Upload button; once an image is in, a solid frame in the slot's
+   shape (logo 1:1, header 4:1) shows it. */
+.image-field__frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px;
+  overflow: hidden;
+  border: 1px dashed var(--btn-base);
+  background: var(--canvas);
+  text-align: center;
+}
+
+.image-field__frame.is-dragging {
+  background: #eae7de;
+}
+
+.image-field__frame.has-image {
+  padding: 0;
+  border-style: solid;
+}
+
+.image-field--logo .has-image {
+  width: min(100%, 200px);
+  aspect-ratio: 1;
+}
+
+.image-field--cover .has-image {
+  width: 100%;
+  aspect-ratio: 4 / 1;
+}
+
+.image-field__prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  color: var(--btn-base);
+}
+
+.image-field__title {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font: 400 14px/20px var(--font-body);
+  color: var(--text-border);
+}
+
+.image-field__title strong {
+  font-weight: 700;
+  color: var(--btn-base);
+}
+
+.image-field__preview {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+}
+
+/* The centered area every screen shows of the header (IMAGE_SLOTS.cover.safe). */
+.image-field__safe {
+  position: absolute;
+  inset: calc((1 - var(--safe-y)) * 50%) calc((1 - var(--safe-x)) * 50%);
+  border: 1px dashed var(--canvas);
+  box-shadow: 0 0 0 1px rgb(37 39 34 / 0.45);
+  pointer-events: none;
+}
+
+.image-field__status,
+.image-field__hints {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* Kept in the page for screen readers while empty, without its gap. */
+.image-field__status:empty {
+  margin-top: -6px;
+}
+
+.image-field__hints {
+  margin: 0;
+  padding-left: 18px;
+  list-style: disc;
+  color: var(--text-border);
+}
+
+.image-field__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 /* Size=sm whenever the form itself is narrow, wherever it is placed
@@ -2541,6 +2839,7 @@ button.tag-region {
 }
 
 .map-type__option {
+  position: relative;
   display: inline-flex;
   align-items: center;
   padding: 11px 12px 9px;
@@ -2550,12 +2849,25 @@ button.tag-region {
   font: 500 12px/18px var(--font-body);
   text-transform: uppercase;
   cursor: pointer;
+  transition: color 0.2s ease;
 }
 
 .map-type__option[aria-pressed='true'] {
-  background: var(--canvas);
   color: var(--btn-base);
   font-weight: 700;
+}
+
+/* The picked option's paper fill: one element that slides between the two (Motion
+   layoutId in StudioMap), under the word or icon. */
+.map-type__active {
+  position: absolute;
+  inset: -1.5px;
+  background: var(--canvas);
+}
+
+.map-type__label,
+.map-type__icon {
+  position: relative;
 }
 
 .map-type__icon {
@@ -2585,6 +2897,25 @@ button.tag-region {
 .map-zoom__button:is(:hover, :active) {
   background: var(--canvas);
   color: var(--btn-base);
+}
+
+/* Map controls give a little under the finger or cursor. `scale`, not `transform`,
+   which the opening cascade (GSAP) animates on the filter chips. */
+.map-zoom__button,
+.map-filter__tags > button {
+  transition: scale 0.15s ease-out;
+}
+
+.map-zoom__button:active,
+.map-filter__tags > button:active {
+  scale: 0.94;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-zoom__button:active,
+  .map-filter__tags > button:active {
+    scale: none;
+  }
 }
 
 .pin {
@@ -2640,6 +2971,64 @@ button.tag-region {
 
 .pin.is-active .marker {
   transform: translateY(-4px);
+}
+
+/* Markers that appear after the map's first reveal (a filter, a zoom) pop in. Fill
+   `backwards` only, so the raised active state still applies once it has landed. */
+.pin--enter .marker,
+.cluster.pin--enter {
+  animation: marker-enter 0.36s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  transform-origin: 50% 100%;
+}
+
+@keyframes marker-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.6);
+  }
+}
+
+/* The selected pin sends out a slow ring from its tip. */
+.pin {
+  position: relative;
+}
+
+.pin[aria-expanded='true']::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 36px;
+  height: 12px;
+  margin-left: -18px;
+  border: 2px solid var(--btn-base);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: pin-ping 1.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+@keyframes pin-ping {
+  from {
+    opacity: 0.7;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pin--enter .marker,
+  .cluster.pin--enter {
+    animation: none;
+  }
+
+  /* A still ring keeps the selection visible. */
+  .pin[aria-expanded='true']::before {
+    animation: none;
+    opacity: 0.6;
+  }
 }
 
 .pin:focus-visible {
@@ -2709,12 +3098,40 @@ button.tag-region {
   width: 162px;
   max-width: calc(100% - 20px);
   padding: 7px; /* 40px tall with its outline, as in Figma */
+  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* State=Opened: 298px, 24px under the key. */
 .legend[open] {
   width: 298px;
   padding: 7px 7px 23px;
+}
+
+/* Opening, the box widens and the key slides down into it. */
+.legend[open] .legend__body {
+  animation: legend-open 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.05s backwards;
+}
+
+@keyframes legend-open {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.legend__caret {
+  transition: transform 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .legend,
+  .legend__caret {
+    transition: none;
+  }
+
+  .legend[open] .legend__body {
+    animation: none;
+  }
 }
 
 .legend__summary {
@@ -2942,6 +3359,21 @@ button.tag-region {
   letter-spacing: -0.8px;
 }
 
+/* The count's window (RollingNumber): numbers roll through it. It reaches past the
+   tight 30px line so the 40px digits are not cropped. */
+.sidebar__roll {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  padding-block: 6px;
+  margin-block: -6px;
+  vertical-align: bottom;
+}
+
+.sidebar__roll-value {
+  display: block;
+}
+
 .sidebar__shown {
   width: 82px;
   font: 400 12px/14px var(--font-body);
@@ -2954,13 +3386,11 @@ button.tag-region {
   gap: 6px;
 }
 
-/* Figma's "Scroll Bar": an ink thumb on paper. */
 .sidebar__body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-color: var(--btn-base) var(--canvas);
 }
 
 .studio-list {
@@ -3380,6 +3810,14 @@ button.tag-region {
 .studio-page__section {
   display: flex;
   flex-direction: column;
+}
+
+/* The section's content under its heading (fades in as one group); laid out like the
+   section itself so margins behave the same. */
+.studio-page__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .studio-page__boxes {
